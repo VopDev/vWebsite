@@ -39,6 +39,11 @@ h1 {
   color: var(--accent);
   line-height: 1;
   margin-bottom: 0.5rem;
+  transition: text-shadow 0.3s ease;
+}
+
+h1:hover {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.15), 0 0 40px rgba(255, 255, 255, 0.08);
 }
 
 .tagline {
@@ -74,6 +79,7 @@ h1 {
   color: var(--text);
   border-color: #444;
   background: var(--hover-bg);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
 .links a svg {
