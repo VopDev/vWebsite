@@ -1,0 +1,18 @@
+# Dependencies — reinstalled via npm install
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
