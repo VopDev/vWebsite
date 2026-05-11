@@ -43,13 +43,13 @@ h1 {
 }
 
 h1:hover {
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.15), 0 0 40px rgba(255, 255, 255, 0.08);
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.15), 0 0 40px rgba(255, 255, 255, 0.08), 0 0 30px rgba(255, 200, 0, 0.12);
 }
 
 .divider {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 2rem 0;
+  border-top: 1px solid #333333;
+  margin: 2rem 0 3rem 0;
 }
   color: var(--muted);
   font-size: 1rem;
@@ -83,7 +83,7 @@ h1:hover {
   color: var(--text);
   border-color: #444;
   background: var(--hover-bg);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.05), 0 0 20px rgba(255, 200, 0, 0.08);
 }
 
 .links a svg {
