@@ -37,15 +37,12 @@ header { display: flex; flex-direction: column; gap: 0.3rem; }
 
 .header-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 
-.hard-mode-btn {
-  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 0.25rem 0.55rem; border-radius: 4px;
-  border: 1px solid var(--border2); background: transparent; color: var(--muted);
-  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+.hard-badge {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.2rem 0.5rem; border-radius: 4px;
+  border: 1px solid #ef4444; color: #ef4444; background: #1a0808;
+  flex-shrink: 0;
 }
-.hard-mode-btn:hover:not(:disabled) { border-color: #4a4a4a; color: var(--text); }
-.hard-mode-btn.active { border-color: #ef4444; color: #ef4444; background: #1a0808; }
-.hard-mode-btn:disabled { opacity: 0.3; cursor: default; }
 
 .back-link {
   color: var(--muted);

@@ -497,12 +497,8 @@ function render() {
   const s      = curSong();
   const allOver = state.games.every(gm => gm.over);
 
-  // Hard mode button + timer
-  const canToggleHard = state.games.every(gm => gm.guesses.length === 0);
-  const hardBtn = document.getElementById('hardModeBtn');
-  hardBtn.textContent = hardMode ? '⚡ Hard: ON' : '⚡ Hard';
-  hardBtn.classList.toggle('active', hardMode);
-  hardBtn.disabled = !canToggleHard;
+  // Hard mode badge + timer
+  document.getElementById('hardBadge').style.display = hardMode ? '' : 'none';
   document.getElementById('hardTimerRow').classList.toggle('visible', hardMode && !g.over && !allOver);
 
   // Hints (suppressed in hard mode)
@@ -699,15 +695,6 @@ function setupEvents() {
     });
   }
 
-  // Hard mode toggle
-  document.getElementById('hardModeBtn').addEventListener('click', () => {
-    if (!state.games.every(gm => gm.guesses.length === 0)) return;
-    hardMode = !hardMode;
-    localStorage.setItem('songless-hard', hardMode ? '1' : '0');
-    if (hardMode && !curGame().over) startHardTimer();
-    else stopHardTimer();
-    render();
-  });
 }
 
 function copyText(btn, text) {
