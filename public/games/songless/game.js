@@ -98,32 +98,23 @@ async function load() {
   return false;
 }
 
-// ── Deezer JSONP ──────────────────────────────────────────────────────────────
-function fetchPreview(title, artist) {
-  return new Promise((resolve, reject) => {
-    const cb = '_dz' + Date.now() + Math.random().toString(36).slice(2);
-    const q  = encodeURIComponent(title + ' ' + artist);
-    const s  = document.createElement('script');
-    s.src    = `https://api.deezer.com/search?q=${q}&limit=10&output=jsonp&callback=${cb}`;
+// ── iTunes preview ────────────────────────────────────────────────────────────
+async function fetchPreview(title, artist) {
+  const q   = encodeURIComponent(`${title} ${artist}`);
+  const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=10`);
+  if (!res.ok) throw new Error('itunes error');
+  const data = await res.json();
 
-    const tid = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 9000);
+  const tl = title.toLowerCase();
+  const al = artist.toLowerCase().split(' ')[0];
 
-    window[cb] = (data) => {
-      clearTimeout(tid); cleanup();
-      const tl = title.toLowerCase();
-      const al = artist.toLowerCase().split(' ')[0];
-      const best =
-        data.data?.find(t => t.title.toLowerCase().includes(tl) && t.artist.name.toLowerCase().includes(al)) ||
-        data.data?.find(t => t.title.toLowerCase().includes(tl)) ||
-        data.data?.[0];
-      if (best?.preview) resolve(best.preview);
-      else reject(new Error('no preview'));
-    };
+  const best =
+    data.results?.find(t => t.trackName?.toLowerCase().includes(tl) && t.artistName?.toLowerCase().includes(al)) ||
+    data.results?.find(t => t.trackName?.toLowerCase().includes(tl)) ||
+    data.results?.[0];
 
-    s.onerror = () => { clearTimeout(tid); cleanup(); reject(new Error('script error')); };
-    function cleanup() { delete window[cb]; s.parentNode?.removeChild(s); }
-    document.head.appendChild(s);
-  });
+  if (best?.previewUrl) return best.previewUrl;
+  throw new Error('no preview');
 }
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
