@@ -31,7 +31,18 @@ function getDailySongs(offset = 0) {
     const j = Math.floor(rand() * (i + 1));
     [indices[i], indices[j]] = [indices[j], indices[i]];
   }
-  return indices.slice(0, DAILY_COUNT).map(i => SONGS[i]);
+
+  const picked  = [];
+  const artists = new Set();
+  for (const idx of indices) {
+    const song = SONGS[idx];
+    if (!artists.has(song.artist)) {
+      picked.push(song);
+      artists.add(song.artist);
+      if (picked.length === DAILY_COUNT) break;
+    }
+  }
+  return picked;
 }
 
 const TODAY           = todayStr();
