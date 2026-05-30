@@ -45,10 +45,8 @@ function getDailySongs(offset = 0) {
   return picked;
 }
 
-const TODAY           = todayStr();
-const DEBUG_OFFSET_KEY = `songless-debug-offset-${TODAY}`;
-let   debugOffset      = parseInt(localStorage.getItem(DEBUG_OFFSET_KEY) || '0', 10);
-const SONGS_TODAY      = getDailySongs(debugOffset);
+const TODAY       = todayStr();
+const SONGS_TODAY = getDailySongs();
 
 // ── State ─────────────────────────────────────────────────────────────────────
 function freshState() {
@@ -478,8 +476,8 @@ function render() {
     const art = artworks[state.slot];
     document.getElementById('resultSong').innerHTML =
       `<div class="result-song-row">
-         ${art ? `<img class="result-artwork" src="${art}" alt="">` : ''}
          <button class="song-play-btn" data-slot="${state.slot}" title="Play preview">${ICON_PLAY}</button>
+         ${art ? `<img class="result-artwork" src="${art}" alt="">` : ''}
          <div class="song-info"><strong>${esc(s.title)}</strong><span>${esc(s.artist)}</span></div>
        </div>`;
     document.getElementById('resultEmoji').textContent = emojiRow(g);
@@ -499,8 +497,8 @@ function render() {
       const song = SONGS_TODAY[i];
       const art = artworks[i];
       return `<div class="all-done-row">
-        ${art ? `<img class="row-artwork" src="${art}" alt="">` : ''}
         <button class="song-play-btn" data-slot="${i}" title="Play preview">${ICON_PLAY}</button>
+        ${art ? `<img class="row-artwork" src="${art}" alt="">` : ''}
         <div class="song-info">
           <span class="song-name">${esc(song.title)}</span>
           <span class="song-artist">${esc(song.artist)}</span>
@@ -598,31 +596,6 @@ function setupEvents() {
   // Stats modal close button + Escape key
   document.getElementById('statsClose').addEventListener('click', closeStatsModal);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStatsModal(); });
-
-  // Debug bar
-  if (location.search.includes('debug')) {
-    document.getElementById('debugBar').classList.add('visible');
-  }
-
-  document.getElementById('debugReset').addEventListener('click', async () => {
-    try { await fetch(`/api/songless/state?date=${TODAY}`, { method: 'DELETE' }); } catch {}
-    location.reload();
-  });
-
-  document.getElementById('debugShuffle').addEventListener('click', async () => {
-    const next = (debugOffset + DAILY_COUNT) % SONGS.length;
-    localStorage.setItem(DEBUG_OFFSET_KEY, String(next));
-    try { await fetch(`/api/songless/state?date=${TODAY}`, { method: 'DELETE' }); } catch {}
-    location.reload();
-  });
-
-  document.getElementById('debugClearStats').addEventListener('click', async () => {
-    try {
-      await fetch(`/api/songless/stats?date=${TODAY}`, { method: 'DELETE' });
-      Object.keys(statsCache).forEach(k => delete statsCache[k]);
-      closeStatsModal();
-    } catch {}
-  });
 }
 
 function copyText(btn, text) {

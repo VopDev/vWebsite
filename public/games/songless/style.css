@@ -541,39 +541,3 @@ h1 {
 
 .hint-value { color: var(--text); font-weight: 500; }
 
-/* ── Debug bar ───────────────────────────────────────────────────────────────── */
-.debug-bar {
-  display: none;
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: #180808;
-  border-top: 1px solid #4a1a1a;
-  padding: 0.5rem 1rem;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  z-index: 100;
-}
-.debug-bar.visible { display: flex; }
-
-.debug-label {
-  color: #f87171;
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-.btn-debug {
-  background: #2a1010;
-  color: #f87171;
-  border: 1px solid #5a2222;
-  padding: 0.35rem 0.8rem;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.04em;
-  transition: background 0.15s;
-}
-.btn-debug:hover { background: #3a1818; }

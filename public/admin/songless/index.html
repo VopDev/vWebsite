@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Songless Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+      --border: #222; --border2: #333; --text: #f0f0f0; --muted: #555;
+      --green: #22c55e; --red: #ef4444;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; padding: 2rem 1rem 5rem;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .page { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 2rem; }
+
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.05em; }
+    .back-link:hover { color: var(--text); }
+
+    h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
+    .date { color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; }
+
+    section { display: flex; flex-direction: column; gap: 0.75rem; }
+    h2 { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.25rem;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .song-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+    .song-row .num { color: var(--muted); font-size: 0.72rem; flex-shrink: 0; }
+    .song-row .title { font-size: 0.88rem; font-weight: 600; }
+    .song-row .artist { color: var(--muted); font-size: 0.75rem; }
+
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.25rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .stat-header { display: flex; justify-content: space-between; align-items: center; }
+    .stat-title { font-size: 0.8rem; font-weight: 600; }
+    .stat-total { font-size: 0.72rem; color: var(--muted); }
+    .bar-row { display: flex; align-items: center; gap: 0.5rem; height: 20px; }
+    .bar-key { width: 12px; text-align: right; font-size: 0.68rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 100%; display: flex; align-items: center; }
+    .bar-fill {
+      height: 18px; border-radius: 3px; background: var(--surface2);
+      min-width: 24px; display: flex; align-items: center; justify-content: flex-end;
+      padding: 0 6px; font-size: 0.65rem; font-weight: 700; color: var(--text);
+      transition: width 0.4s cubic-bezier(0.4,0,0.2,1); overflow: hidden; white-space: nowrap;
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .btn {
+      padding: 0.55rem 1.1rem; border-radius: 7px; font-size: 0.73rem; font-weight: 700;
+      cursor: pointer; letter-spacing: 0.07em; text-transform: uppercase;
+      border: 1px solid var(--border2); transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-default { background: var(--surface2); color: var(--text); }
+    .btn-default:hover { border-color: #4a4a4a; }
+    .btn-danger { background: #1a0808; color: var(--red); border-color: #3d1a1a; }
+    .btn-danger:hover { background: #2a1010; }
+
+    .msg { font-size: 0.75rem; color: var(--muted); padding: 0.4rem 0; min-height: 1.2em; }
+    .msg.ok  { color: var(--green); }
+    .msg.err { color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header style="display:flex;flex-direction:column;gap:0.4rem">
+    <a href="/games/songless/" class="back-link">← Back to game</a>
+    <h1>Songless Admin</h1>
+    <p class="date" id="dateLabel"></p>
+  </header>
+
+  <section>
+    <h2>Today's Songs</h2>
+    <div class="card" id="songList">Loading…</div>
+  </section>
+
+  <section>
+    <h2>Today's Stats</h2>
+    <div id="statsView">Loading…</div>
+  </section>
+
+  <section>
+    <h2>Actions</h2>
+    <div class="actions">
+      <button class="btn btn-default" id="refreshBtn">Refresh Stats</button>
+      <button class="btn btn-danger"  id="clearStatsBtn">Clear Today's Stats</button>
+    </div>
+    <p class="msg" id="actionMsg"></p>
+  </section>
+</div>
+
+<script src="/games/songless/songs.js"></script>
+<script>
+  const DAILY_COUNT = 5;
+
+  function dayIndex() {
+    const epoch = Date.UTC(2025, 0, 1);
+    const n = new Date();
+    return Math.floor((Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()) - epoch) / 86400000);
+  }
+
+  function todayStr() {
+    const n = new Date();
+    return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
+  }
+
+  function seededRand(seed) {
+    let s = ((seed || 1) ^ 0x9e3779b9) >>> 0 || 1;
+    return () => { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (s >>> 0) / 0x100000000; };
+  }
+
+  function getDailySongs() {
+    const rand    = seededRand(dayIndex() * 1000 + 1);
+    const indices = Array.from({ length: SONGS.length }, (_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    const picked = [], artists = new Set();
+    for (const idx of indices) {
+      const song = SONGS[idx];
+      if (!artists.has(song.artist)) { picked.push(song); artists.add(song.artist); if (picked.length === DAILY_COUNT) break; }
+    }
+    return picked;
+  }
+
+  const TODAY = todayStr();
+  const songs = getDailySongs();
+
+  document.getElementById('dateLabel').textContent = `Date: ${TODAY}`;
+
+  // Render song list
+  document.getElementById('songList').innerHTML = songs.map((s, i) =>
+    `<div class="song-row">
+       <span class="num">${i + 1}</span>
+       <div style="flex:1"><div class="title">${s.title}</div><div class="artist">${s.artist}</div></div>
+       <span class="num">${s.year ?? '—'}</span>
+     </div>`
+  ).join('');
+
+  // Load stats
+  async function loadStats() {
+    document.getElementById('statsView').innerHTML = '<p class="msg">Loading…</p>';
+    const slots = await Promise.all(
+      songs.map((_, i) => fetch(`/api/songless/stats?date=${TODAY}&slot=${i}`).then(r => r.json()).catch(() => null))
+    );
+    document.getElementById('statsView').innerHTML = slots.map((stats, i) => {
+      if (!stats) return `<div class="stat-card"><div class="stat-title">Song ${i+1} — error loading</div></div>`;
+      const keys   = ['1','2','3','4','5','6','fail'];
+      const labels = ['1','2','3','4','5','6','X'];
+      const counts = keys.map(k => stats[k] || 0);
+      const total  = stats.total ?? counts.reduce((a,b) => a+b, 0);
+      const max    = Math.max(...counts, 1);
+      return `<div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Song ${i+1} — ${songs[i].title}</span>
+          <span class="stat-total">${total} player${total !== 1 ? 's' : ''}</span>
+        </div>
+        ${keys.map((k, j) => {
+          const pct = Math.max(Math.round((counts[j] / max) * 100), 4);
+          return `<div class="bar-row">
+            <span class="bar-key">${labels[j]}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%">${counts[j]}</div></div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  loadStats();
+
+  // Actions
+  function setMsg(text, type = '') {
+    const el = document.getElementById('actionMsg');
+    el.textContent = text;
+    el.className = `msg ${type}`;
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', () => {
+    loadStats();
+    setMsg('Stats refreshed.', 'ok');
+    setTimeout(() => setMsg(''), 2000);
+  });
+
+  document.getElementById('clearStatsBtn').addEventListener('click', async () => {
+    if (!confirm(`Clear all stats for ${TODAY}?`)) return;
+    try {
+      await fetch(`/api/songless/stats?date=${TODAY}`, { method: 'DELETE' });
+      setMsg('Stats cleared.', 'ok');
+      loadStats();
+    } catch {
+      setMsg('Failed to clear stats.', 'err');
+    }
+  });
+</script>
+</body>
+</html>
