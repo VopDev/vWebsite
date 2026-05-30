@@ -512,8 +512,10 @@ h1 {
 }
 
 .hint-chip {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   background: var(--surface);
   border: 1px solid var(--border2);
