@@ -23,11 +23,11 @@ function getDailySongs(offset = 0) {
   );
 }
 
-const TODAY = todayStr();
+const TODAY           = todayStr();
 const DEBUG_OFFSET_KEY = `songless-debug-offset-${TODAY}`;
-debugOffset = parseInt(localStorage.getItem(DEBUG_OFFSET_KEY) || '0', 10);
-const SONGS_TODAY = getDailySongs(debugOffset);
-const STOR_KEY    = `songless-${TODAY}`;
+let   debugOffset      = parseInt(localStorage.getItem(DEBUG_OFFSET_KEY) || '0', 10);
+const SONGS_TODAY      = getDailySongs(debugOffset);
+const STOR_KEY         = `songless-${TODAY}`;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 function freshState() {
@@ -46,8 +46,7 @@ let playTimer = null;
 let progTimer = null;
 let selected  = null;
 
-const statsCache  = {};
-let   debugOffset = 0;  // added by shuffle debug button
+const statsCache = {};
 
 function curGame() { return state.games[state.slot]; }
 function curSong() { return SONGS_TODAY[state.slot]; }
@@ -354,7 +353,9 @@ function render() {
   const dur = clipDur();
   document.getElementById('clipLabel').textContent = g.over
     ? `Full preview — ${dur}s`
-    : `Clip ${g.clipIdx + 1} of ${MAX_GUESSES} — ${dur}s`;
+    : audio
+      ? `Clip ${g.clipIdx + 1} of ${MAX_GUESSES} — ${dur}s`
+      : 'Loading audio…';
   document.getElementById('playBtn').disabled = !audio;
 
   // Guess history
@@ -526,35 +527,29 @@ function copyText(btn, text) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-async function init() {
+function init() {
   load();
   setupEvents();
 
-  const loadEl  = document.getElementById('loading');
-  const gameEl  = document.getElementById('game');
-  const errorEl = document.getElementById('error');
-
-  // Fetch all 5 previews in parallel; wait for the current slot first
-  const fetches = SONGS_TODAY.map((s, i) =>
-    fetchPreview(s.title, s.artist)
-      .then(url  => { previews[i] = url; })
-      .catch(()  => { previews[i] = null; })
-  );
-
-  try { await fetches[state.slot]; } catch {}
-
-  loadEl.style.display = 'none';
-  gameEl.classList.add('visible');
-  setupAudio(state.slot);
+  // Show the game shell immediately — don't block on audio loading
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('game').classList.add('visible');
   render();
 
-  // If this slot was already completed before page load, show stats modal
+  // Fetch all 5 previews in the background; enable play button as each arrives
+  SONGS_TODAY.forEach((song, i) => {
+    fetchPreview(song.title, song.artist)
+      .then(url => {
+        previews[i] = url;
+        if (i === state.slot) { setupAudio(i); render(); }
+      })
+      .catch(() => { previews[i] = null; });
+  });
+
+  // If the current slot was already finished before page load, open stats
   if (curGame().over && !state.games.every(g => g.over)) {
     openStatsModal(state.slot, curGame());
   }
-
-  // Rest of previews load in background
-  Promise.all(fetches);
 }
 
 init();
