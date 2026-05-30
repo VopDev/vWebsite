@@ -15,6 +15,14 @@ export async function onRequestDelete({ request, env }) {
     return new Response('OK', { status: 200 });
   }
 
+  if (type === 'stats' && date) {
+    await Promise.all([
+      env.SONGLESS_KV.delete(`cq-stats-${date}`),
+      env.SONGLESS_KV.delete(`cq-players-${date}`),
+    ]);
+    return new Response('OK', { status: 200 });
+  }
+
   if (type === 'states' && date) {
     // Delete all per-user game states for the given date
     let deleted = 0;

@@ -259,7 +259,7 @@ async function submitThenFetch(slot, game) {
       await fetch('/api/songless/result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: TODAY, slot, guessCount: game.guesses.length, won: game.won, mode: MODE }),
+        body: JSON.stringify({ date: TODAY, slot, guessCount: game.timedOut ? MAX_GUESSES : game.guesses.length, won: game.won, mode: MODE }),
       });
       state.submitted[slot] = true;
       save();
@@ -342,6 +342,10 @@ function stopHardTimer() {
 function timeoutSong() {
   const g = curGame();
   if (g.over) return;
+  // Fill remaining guess slots so it displays as all 6 used
+  while (g.guesses.length < MAX_GUESSES) {
+    g.guesses.push({ display: '', correct: false, skipped: true });
+  }
   g.over     = true;
   g.won      = false;
   g.timedOut = true;

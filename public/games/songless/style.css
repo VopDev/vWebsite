@@ -32,6 +32,10 @@ body {
   gap: 1.25rem;
 }
 
+@media (min-width: 700px) {
+  .page { max-width: 640px; }
+}
+
 /* ── Header ─────────────────────────────────────────────────────────────────── */
 header { display: flex; flex-direction: column; gap: 0.3rem; }
 
