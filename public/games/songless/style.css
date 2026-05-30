@@ -35,6 +35,18 @@ body {
 /* ── Header ─────────────────────────────────────────────────────────────────── */
 header { display: flex; flex-direction: column; gap: 0.3rem; }
 
+.header-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+
+.hard-mode-btn {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.25rem 0.55rem; border-radius: 4px;
+  border: 1px solid var(--border2); background: transparent; color: var(--muted);
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.hard-mode-btn:hover:not(:disabled) { border-color: #4a4a4a; color: var(--text); }
+.hard-mode-btn.active { border-color: #ef4444; color: #ef4444; background: #1a0808; }
+.hard-mode-btn:disabled { opacity: 0.3; cursor: default; }
+
 .back-link {
   color: var(--muted);
   text-decoration: none;
@@ -487,6 +499,24 @@ h1 {
 
 .next-label { color: var(--muted); font-size: 0.73rem; }
 
+/* ── Cookie banner ───────────────────────────────────────────────────────────── */
+#cookieBanner {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #141414; border-top: 1px solid var(--border2);
+  padding: 0.9rem 1.25rem; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; font-size: 0.78rem; color: var(--muted);
+  animation: slideUpBanner 0.25s ease;
+}
+@keyframes slideUpBanner { from { transform: translateY(100%); } to { transform: translateY(0); } }
+#cookieBanner p { flex: 1; line-height: 1.4; }
+#cookieDismiss {
+  padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700;
+  border: 1px solid var(--border2); background: var(--surface2); color: var(--text);
+  cursor: pointer; white-space: nowrap; transition: border-color 0.15s;
+}
+#cookieDismiss:hover { border-color: #4a4a4a; }
+
 /* ── Status messages ─────────────────────────────────────────────────────────── */
 .msg { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 2rem 0; }
 .msg.error {
@@ -499,6 +529,47 @@ h1 {
 
 #game { display: none; flex-direction: column; gap: 1.25rem; }
 #game.visible { display: flex; }
+
+/* ── Hard mode timer ─────────────────────────────────────────────────────────── */
+#hardTimerRow {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+}
+#hardTimerRow.visible { display: flex; }
+
+.hard-timer-track {
+  flex: 1; height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden;
+}
+.hard-timer-fill {
+  height: 100%; width: 100%; background: var(--accent);
+  border-radius: 2px; transition: width 0.9s linear, background 0.3s;
+}
+.hard-timer-num {
+  font-size: 0.8rem; font-weight: 700; color: var(--text);
+  min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums;
+}
+.hard-timer-num.warning { color: #f59e0b; }
+.hard-timer-num.danger  { color: var(--red); }
+
+/* ── Achievement toast ───────────────────────────────────────────────────────── */
+#toastContainer { position: fixed; top: 1rem; right: 1rem; z-index: 999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+
+.ach-toast {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: #1a1a1a; border: 1px solid #333;
+  border-radius: 10px; padding: 0.75rem 1rem;
+  min-width: 220px; max-width: 280px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  transform: translateX(110%); opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+}
+.ach-toast.show { transform: translateX(0); opacity: 1; }
+.ach-toast-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+.ach-toast-body { display: flex; flex-direction: column; gap: 0.1rem; }
+.ach-toast-label { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #f59e0b; }
+.ach-toast-title { font-size: 0.85rem; font-weight: 700; color: #f0f0f0; }
+.ach-toast-desc  { font-size: 0.7rem; color: #666; }
 
 /* ── Hints ───────────────────────────────────────────────────────────────────── */
 #hints { min-height: 1.875rem; }

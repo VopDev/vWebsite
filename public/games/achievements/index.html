@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Achievements — Vopori</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+      --border: #222; --border2: #333; --text: #f0f0f0; --muted: #666;
+      --gold: #f59e0b;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; display: flex; justify-content: center;
+      padding: 3rem 1rem 5rem;
+    }
+    .page { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 2.5rem; }
+
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.8rem; letter-spacing: 0.05em; transition: color 0.15s; }
+    .back-link:hover { color: var(--text); }
+
+    h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin-top: 0.5rem; }
+
+    .section-label {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem;
+    }
+
+    .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
+
+    .ach-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.1rem 1.25rem;
+      display: flex; align-items: flex-start; gap: 1rem;
+      transition: border-color 0.15s;
+    }
+    .ach-card.unlocked { border-color: var(--border2); }
+    .ach-card.locked   { opacity: 0.38; }
+
+    .ach-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; filter: grayscale(0); }
+    .ach-card.locked .ach-icon { filter: grayscale(1); }
+
+    .ach-body { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .ach-title { font-size: 0.9rem; font-weight: 700; }
+    .ach-desc  { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+    .ach-date  { font-size: 0.65rem; color: var(--gold); margin-top: 0.2rem; }
+
+    .progress-bar {
+      height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 0.5rem;
+    }
+    .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.4s ease; }
+
+    .count-label { font-size: 0.72rem; color: var(--muted); }
+    .count-label strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header style="display:flex;flex-direction:column;gap:0.4rem">
+    <a href="/games/" class="back-link">← Games</a>
+    <h1>Achievements</h1>
+    <p class="subtitle" id="progressLabel">Loading…</p>
+  </header>
+
+  <div id="achSections"></div>
+</div>
+
+<script src="/games/achievements.js"></script>
+<script>
+  async function init() {
+    let unlocked = [];
+    try { unlocked = await fetch('/api/achievements').then(r => r.json()); } catch {}
+
+    const unlockedMap = Object.fromEntries(unlocked.map(a => [a.id, a]));
+    const total    = ALL_ACHIEVEMENTS.length;
+    const doneCount = unlocked.length;
+
+    document.getElementById('progressLabel').innerHTML =
+      `<strong style="color:var(--text)">${doneCount}/${total}</strong> achievements unlocked`;
+
+    // Group by game
+    const games = [...new Set(ALL_ACHIEVEMENTS.map(a => a.game))];
+    document.getElementById('achSections').innerHTML = games.map(game => {
+      const achs = ALL_ACHIEVEMENTS.filter(a => a.game === game);
+      const gameDone = achs.filter(a => unlockedMap[a.id]).length;
+      return `<div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem">
+        <div>
+          <div class="section-label">${game}</div>
+          <div class="count-label"><strong>${gameDone}</strong>/${achs.length}</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(gameDone/achs.length*100)}%"></div></div>
+        </div>
+        <div class="ach-grid">${achs.map(a => {
+          const entry = unlockedMap[a.id];
+          const dateStr = entry ? new Date(entry.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+          return `<div class="ach-card ${entry ? 'unlocked' : 'locked'}">
+            <div class="ach-icon">${a.icon}</div>
+            <div class="ach-body">
+              <div class="ach-title">${a.title}</div>
+              <div class="ach-desc">${a.desc}</div>
+              ${dateStr ? `<div class="ach-date">Unlocked ${dateStr}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  init();
+</script>
+</body>
+</html>

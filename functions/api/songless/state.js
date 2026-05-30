@@ -26,9 +26,15 @@ export async function onRequestPost({ request, env }) {
 
   let sid = getSid(request);
   const headers = {};
-  if (!sid) {
+  const isNew = !sid;
+  if (isNew) {
     sid = crypto.randomUUID();
     headers['Set-Cookie'] = cookieHeader(sid);
+
+    // Count this as a new unique player for the day
+    const pk    = `players-${date}`;
+    const count = parseInt(await env.SONGLESS_KV.get(pk) || '0', 10);
+    await env.SONGLESS_KV.put(pk, String(count + 1));
   }
 
   await env.SONGLESS_KV.put(`state-${sid}-${date}`, JSON.stringify(state), {

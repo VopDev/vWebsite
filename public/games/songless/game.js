@@ -45,8 +45,8 @@ function getDailySongs(offset = 0) {
   return picked;
 }
 
-const TODAY       = todayStr();
-const SONGS_TODAY = getDailySongs();
+const TODAY = todayStr();
+let SONGS_TODAY;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 function freshState() {
@@ -69,6 +69,10 @@ let selected  = null;
 
 let resultAudio     = null;
 let resultAudioSlot = -1;
+
+let hardMode         = localStorage.getItem('songless-hard') === '1';
+let hardTimerInterval = null;
+let hardTimeLeft      = 30;
 
 const statsCache = {};
 
@@ -289,6 +293,81 @@ function renderStatsBars(stats, game) {
   }));
 }
 
+// ── Hard mode timer ───────────────────────────────────────────────────────────
+function updateTimerDisplay() {
+  const row  = document.getElementById('hardTimerRow');
+  const num  = document.getElementById('hardTimerNum');
+  const fill = document.getElementById('hardTimerFill');
+  if (!row) return;
+  num.textContent = hardTimeLeft;
+  fill.style.width = (hardTimeLeft / 30 * 100) + '%';
+  fill.style.background = hardTimeLeft <= 5 ? 'var(--red)' : hardTimeLeft <= 10 ? '#f59e0b' : 'var(--accent)';
+  num.className = 'hard-timer-num' + (hardTimeLeft <= 5 ? ' danger' : hardTimeLeft <= 10 ? ' warning' : '');
+}
+
+function startHardTimer() {
+  clearInterval(hardTimerInterval);
+  hardTimeLeft = 30;
+  updateTimerDisplay();
+  hardTimerInterval = setInterval(() => {
+    hardTimeLeft--;
+    updateTimerDisplay();
+    if (hardTimeLeft <= 0) {
+      clearInterval(hardTimerInterval);
+      hardTimerInterval = null;
+      makeGuess({ title: '', artist: '' }, true);
+    }
+  }, 1000);
+}
+
+function stopHardTimer() {
+  clearInterval(hardTimerInterval);
+  hardTimerInterval = null;
+}
+
+// ── Achievements ──────────────────────────────────────────────────────────────
+async function unlockAchievement(id) {
+  try {
+    const res  = await fetch('/api/achievements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (data.unlocked) showAchievementToast(id);
+  } catch {}
+}
+
+function showAchievementToast(id) {
+  const def = ALL_ACHIEVEMENTS.find(a => a.id === id);
+  if (!def) return;
+  const toast = document.createElement('div');
+  toast.className = 'ach-toast';
+  toast.innerHTML = `<div class="ach-toast-icon">${def.icon}</div>
+    <div class="ach-toast-body">
+      <div class="ach-toast-label">Achievement unlocked</div>
+      <div class="ach-toast-title">${def.title}</div>
+      <div class="ach-toast-desc">${def.desc}</div>
+    </div>`;
+  document.getElementById('toastContainer').appendChild(toast);
+  requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 350);
+  }, 4000);
+}
+
+function checkAchievements(game) {
+  if (!game.won) return;
+  unlockAchievement('songless_first');
+  if (game.guesses.length === 1)                    unlockAchievement('songless_perfect');
+  if (!game.guesses.some(g => g.skipped))           unlockAchievement('songless_no_skip');
+  if (hardMode)                                      unlockAchievement('songless_hard_win');
+  if (hardMode && game.guesses.length === 1)         unlockAchievement('songless_hard_first');
+  if (hardMode && hardTimeLeft >= 15)                unlockAchievement('songless_beat_clock');
+  if (state.games.every(g => g.over && g.won))       unlockAchievement('songless_sweep');
+}
+
 // ── Result preview ────────────────────────────────────────────────────────────
 const ICON_PLAY  = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
 const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
@@ -379,8 +458,12 @@ function makeGuess(song, skipped) {
   render();
 
   if (g.over) {
+    stopHardTimer();
+    checkAchievements(g);
     clearTimeout(statsModalTimer);
     statsModalTimer = setTimeout(() => openStatsModal(state.slot, g), 650);
+  } else if (hardMode) {
+    startHardTimer();
   }
 }
 
@@ -391,6 +474,7 @@ function advanceSlot() {
   state.slot++;
   save();
   setupAudio(state.slot);
+  if (hardMode) startHardTimer();
   selected = null;
   const si = document.getElementById('searchInput');
   si.value = '';
@@ -413,8 +497,17 @@ function render() {
   const s      = curSong();
   const allOver = state.games.every(gm => gm.over);
 
-  // Hints
-  renderHints(s, g);
+  // Hard mode button + timer
+  const canToggleHard = state.games.every(gm => gm.guesses.length === 0);
+  const hardBtn = document.getElementById('hardModeBtn');
+  hardBtn.textContent = hardMode ? '⚡ Hard: ON' : '⚡ Hard';
+  hardBtn.classList.toggle('active', hardMode);
+  hardBtn.disabled = !canToggleHard;
+  document.getElementById('hardTimerRow').classList.toggle('visible', hardMode && !g.over && !allOver);
+
+  // Hints (suppressed in hard mode)
+  if (!hardMode) renderHints(s, g);
+  else document.getElementById('hints').innerHTML = '';
 
   // Song progress dots
   document.getElementById('songProgress').innerHTML =
@@ -596,6 +689,25 @@ function setupEvents() {
   // Stats modal close button + Escape key
   document.getElementById('statsClose').addEventListener('click', closeStatsModal);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStatsModal(); });
+
+  // Cookie banner
+  if (!localStorage.getItem('cookie-notice-dismissed')) {
+    document.getElementById('cookieBanner').style.display = 'flex';
+    document.getElementById('cookieDismiss').addEventListener('click', () => {
+      localStorage.setItem('cookie-notice-dismissed', '1');
+      document.getElementById('cookieBanner').style.display = 'none';
+    });
+  }
+
+  // Hard mode toggle
+  document.getElementById('hardModeBtn').addEventListener('click', () => {
+    if (!state.games.every(gm => gm.guesses.length === 0)) return;
+    hardMode = !hardMode;
+    localStorage.setItem('songless-hard', hardMode ? '1' : '0');
+    if (hardMode && !curGame().over) startHardTimer();
+    else stopHardTimer();
+    render();
+  });
 }
 
 function copyText(btn, text) {
@@ -608,6 +720,14 @@ function copyText(btn, text) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
+  // Resolve today's seed offset (admin may have shuffled) before picking songs
+  try {
+    const cfg = await fetch(`/api/songless/config?date=${TODAY}`).then(r => r.json());
+    SONGS_TODAY = getDailySongs(cfg.seedOffset || 0);
+  } catch {
+    SONGS_TODAY = getDailySongs(0);
+  }
+
   await load();
   setupEvents();
 
@@ -630,6 +750,11 @@ async function init() {
   // If the current slot was already finished before page load, open stats
   if (curGame().over && !state.games.every(g => g.over)) {
     openStatsModal(state.slot, curGame());
+  }
+
+  // Start hard mode timer if returning mid-game
+  if (hardMode && !curGame().over && !state.games.every(g => g.over)) {
+    startHardTimer();
   }
 }
 

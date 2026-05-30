@@ -11,7 +11,10 @@
   <header>
     <a href="/games/" class="back-link">← Games</a>
     <h1>Vop's Songless</h1>
-    <p class="subtitle">Guess today's 5 songs · 6 tries each</p>
+    <div class="header-row">
+      <p class="subtitle">Guess today's 5 songs · 6 tries each</p>
+      <button class="hard-mode-btn" id="hardModeBtn">⚡ Hard</button>
+    </div>
   </header>
 
   <p class="msg" id="loading">Loading today's songs…</p>
@@ -30,6 +33,11 @@
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
         <div class="clip-label" id="clipLabel">Loading…</div>
       </div>
+    </div>
+
+    <div id="hardTimerRow">
+      <div class="hard-timer-track"><div class="hard-timer-fill" id="hardTimerFill"></div></div>
+      <span class="hard-timer-num" id="hardTimerNum">30</span>
     </div>
 
     <div id="hints"></div>
@@ -84,7 +92,15 @@
 </div>
 
 
+<div id="toastContainer"></div>
+
+<div id="cookieBanner" style="display:none">
+  <p>🍪 This game uses cookies to save your progress and achievements. Clearing cookies will erase your data.</p>
+  <button id="cookieDismiss">Got it</button>
+</div>
+
 <script src="songs.js"></script>
+<script src="/games/achievements.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

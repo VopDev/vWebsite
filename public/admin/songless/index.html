@@ -17,57 +17,67 @@
       min-height: 100vh; padding: 2rem 1rem 5rem;
       display: flex; flex-direction: column; align-items: center;
     }
-    .page { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 2rem; }
+    .page { width: 100%; max-width: 580px; display: flex; flex-direction: column; gap: 2rem; }
 
-    .back-link { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.05em; }
-    .back-link:hover { color: var(--text); }
-
+    a.back { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.05em; }
+    a.back:hover { color: var(--text); }
     h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
-    .date { color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; }
+    .subtitle { color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; }
 
     section { display: flex; flex-direction: column; gap: 0.75rem; }
-    h2 { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    h2 { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 1rem 1.25rem;
-      display: flex; flex-direction: column; gap: 0.5rem;
+      display: flex; flex-direction: column; gap: 0.55rem;
     }
-    .song-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-    .song-row .num { color: var(--muted); font-size: 0.72rem; flex-shrink: 0; }
-    .song-row .title { font-size: 0.88rem; font-weight: 600; }
-    .song-row .artist { color: var(--muted); font-size: 0.75rem; }
+    .song-row { display: flex; align-items: baseline; gap: 0.75rem; }
+    .song-row .num { color: var(--muted); font-size: 0.7rem; flex-shrink: 0; width: 16px; text-align: right; }
+    .song-row .title { font-size: 0.87rem; font-weight: 600; }
+    .song-row .artist { color: var(--muted); font-size: 0.73rem; }
+    .song-row .year { color: var(--muted); font-size: 0.7rem; margin-left: auto; flex-shrink: 0; }
 
     .stat-card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 1rem 1.25rem;
-      display: flex; flex-direction: column; gap: 0.75rem;
+      display: flex; flex-direction: column; gap: 0.65rem;
     }
     .stat-header { display: flex; justify-content: space-between; align-items: center; }
-    .stat-title { font-size: 0.8rem; font-weight: 600; }
-    .stat-total { font-size: 0.72rem; color: var(--muted); }
+    .stat-title { font-size: 0.82rem; font-weight: 600; }
+    .stat-total { font-size: 0.7rem; color: var(--muted); }
     .bar-row { display: flex; align-items: center; gap: 0.5rem; height: 20px; }
-    .bar-key { width: 12px; text-align: right; font-size: 0.68rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+    .bar-key { width: 12px; text-align: right; font-size: 0.66rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
     .bar-track { flex: 1; height: 100%; display: flex; align-items: center; }
     .bar-fill {
       height: 18px; border-radius: 3px; background: var(--surface2);
-      min-width: 24px; display: flex; align-items: center; justify-content: flex-end;
-      padding: 0 6px; font-size: 0.65rem; font-weight: 700; color: var(--text);
+      min-width: 24px; padding: 0 6px; font-size: 0.64rem; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; justify-content: flex-end;
       transition: width 0.4s cubic-bezier(0.4,0,0.2,1); overflow: hidden; white-space: nowrap;
     }
+
+    .date-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .date-tab {
+      padding: 0.3rem 0.7rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border2); background: var(--surface2);
+      color: var(--muted); transition: all 0.12s;
+    }
+    .date-tab:hover { border-color: #4a4a4a; color: var(--text); }
+    .date-tab.active { background: var(--text); color: #000; border-color: var(--text); }
 
     .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
     .btn {
       padding: 0.55rem 1.1rem; border-radius: 7px; font-size: 0.73rem; font-weight: 700;
       cursor: pointer; letter-spacing: 0.07em; text-transform: uppercase;
-      border: 1px solid var(--border2); transition: border-color 0.15s, background 0.15s;
+      border: 1px solid var(--border2); transition: border-color 0.15s, background 0.15s, opacity 0.15s;
     }
+    .btn:disabled { opacity: 0.4; cursor: default; }
     .btn-default { background: var(--surface2); color: var(--text); }
-    .btn-default:hover { border-color: #4a4a4a; }
-    .btn-danger { background: #1a0808; color: var(--red); border-color: #3d1a1a; }
-    .btn-danger:hover { background: #2a1010; }
+    .btn-default:hover:not(:disabled) { border-color: #4a4a4a; }
+    .btn-danger  { background: #1a0808; color: var(--red); border-color: #3d1a1a; }
+    .btn-danger:hover:not(:disabled)  { background: #2a1010; }
 
-    .msg { font-size: 0.75rem; color: var(--muted); padding: 0.4rem 0; min-height: 1.2em; }
+    .msg { font-size: 0.75rem; color: var(--muted); min-height: 1.2em; }
     .msg.ok  { color: var(--green); }
     .msg.err { color: var(--red); }
   </style>
@@ -75,26 +85,41 @@
 <body>
 <div class="page">
   <header style="display:flex;flex-direction:column;gap:0.4rem">
-    <a href="/games/songless/" class="back-link">← Back to game</a>
+    <a href="/games/songless/" class="back">← Back to game</a>
     <h1>Songless Admin</h1>
-    <p class="date" id="dateLabel"></p>
   </header>
 
+  <!-- Date picker -->
   <section>
-    <h2>Today's Songs</h2>
-    <div class="card" id="songList">Loading…</div>
+    <h2>Day</h2>
+    <div class="date-tabs" id="dateTabs">Loading…</div>
   </section>
 
+  <!-- Songs for selected day -->
   <section>
-    <h2>Today's Stats</h2>
-    <div id="statsView">Loading…</div>
+    <h2>Songs — <span id="selectedDate">…</span></h2>
+    <div class="card" id="songList">—</div>
   </section>
 
+  <!-- Analytics for selected day -->
+  <section>
+    <h2>Analytics</h2>
+    <div id="analyticsView">—</div>
+  </section>
+
+  <!-- Stats for selected day -->
+  <section>
+    <h2>Per-Song Stats</h2>
+    <div id="statsView">—</div>
+  </section>
+
+  <!-- Actions -->
   <section>
     <h2>Actions</h2>
     <div class="actions">
       <button class="btn btn-default" id="refreshBtn">Refresh Stats</button>
-      <button class="btn btn-danger"  id="clearStatsBtn">Clear Today's Stats</button>
+      <button class="btn btn-default" id="shuffleBtn">Shuffle Today's Songs</button>
+      <button class="btn btn-danger"  id="clearStatsBtn">Clear Selected Day Stats</button>
     </div>
     <p class="msg" id="actionMsg"></p>
   </section>
@@ -104,10 +129,10 @@
 <script>
   const DAILY_COUNT = 5;
 
-  function dayIndex() {
+  function dayIndex(dateStr) {
     const epoch = Date.UTC(2025, 0, 1);
-    const n = new Date();
-    return Math.floor((Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()) - epoch) / 86400000);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return Math.floor((Date.UTC(y, m - 1, d) - epoch) / 86400000);
   }
 
   function todayStr() {
@@ -120,8 +145,8 @@
     return () => { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (s >>> 0) / 0x100000000; };
   }
 
-  function getDailySongs() {
-    const rand    = seededRand(dayIndex() * 1000 + 1);
+  function getSongsForDate(dateStr, seedOffset = 0) {
+    const rand    = seededRand(dayIndex(dateStr) * 1000 + seedOffset + 1);
     const indices = Array.from({ length: SONGS.length }, (_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(rand() * (i + 1));
@@ -136,29 +161,89 @@
   }
 
   const TODAY = todayStr();
-  const songs = getDailySongs();
+  let selectedDate = TODAY;
+  let datesIndex = [];
 
-  document.getElementById('dateLabel').textContent = `Date: ${TODAY}`;
+  function setMsg(text, type = '') {
+    const el = document.getElementById('actionMsg');
+    el.textContent = text;
+    el.className = `msg ${type}`;
+    if (text) setTimeout(() => { if (el.textContent === text) { el.textContent = ''; el.className = 'msg'; } }, 3000);
+  }
 
-  // Render song list
-  document.getElementById('songList').innerHTML = songs.map((s, i) =>
-    `<div class="song-row">
-       <span class="num">${i + 1}</span>
-       <div style="flex:1"><div class="title">${s.title}</div><div class="artist">${s.artist}</div></div>
-       <span class="num">${s.year ?? '—'}</span>
-     </div>`
-  ).join('');
+  function renderSongs(dateStr, seedOffset) {
+    const songs = getSongsForDate(dateStr, seedOffset);
+    document.getElementById('selectedDate').textContent = dateStr + (seedOffset ? ` (shuffle #${seedOffset})` : '');
+    document.getElementById('songList').innerHTML = songs.map((s, i) =>
+      `<div class="song-row">
+         <span class="num">${i + 1}</span>
+         <div style="flex:1"><div class="title">${s.title}</div><div class="artist">${s.artist}</div></div>
+         <span class="year">${s.year ?? '—'}</span>
+       </div>`
+    ).join('');
+    return songs;
+  }
 
-  // Load stats
-  async function loadStats() {
+  async function loadAnalytics(dateStr) {
+    document.getElementById('analyticsView').innerHTML = '<p class="msg">Loading…</p>';
+    try {
+      const { players, slots } = await fetch(`/admin/api/analytics?date=${dateStr}`).then(r => r.json());
+
+      const completions  = slots[4]?.total ?? 0;
+      const dropoff      = [players, ...slots.map(s => s.total ?? 0)];
+      const labels       = ['Started', 'Song 1', 'Song 2', 'Song 3', 'Song 4', 'Song 5'];
+      const maxDrop      = Math.max(...dropoff, 1);
+
+      // Win rate across all songs
+      let totalGames = 0, totalWins = 0;
+      for (const s of slots) {
+        const wins = ['1','2','3','4','5','6'].reduce((a, k) => a + (s[k] || 0), 0);
+        totalGames += s.total || 0;
+        totalWins  += wins;
+      }
+      const winRate = totalGames ? Math.round((totalWins / totalGames) * 100) : 0;
+
+      // Avg guesses per won game
+      let guessSum = 0, guessWins = 0;
+      for (const s of slots) {
+        for (let g = 1; g <= 6; g++) {
+          const n = s[String(g)] || 0;
+          guessSum += n * g; guessWins += n;
+        }
+      }
+      const avgGuesses = guessWins ? (guessSum / guessWins).toFixed(2) : '—';
+
+      document.getElementById('analyticsView').innerHTML = `
+        <div class="card" style="gap:1rem">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;text-align:center">
+            <div><div style="font-size:1.6rem;font-weight:700">${players}</div><div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Unique players</div></div>
+            <div><div style="font-size:1.6rem;font-weight:700">${completions}</div><div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Completed all 5</div></div>
+            <div><div style="font-size:1.6rem;font-weight:700">${winRate}%</div><div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Overall win rate</div></div>
+          </div>
+          <div><div style="font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem">Player funnel</div>
+          ${dropoff.map((n, i) => {
+            const pct = Math.max(Math.round((n / maxDrop) * 100), n > 0 ? 2 : 0);
+            return `<div class="bar-row"><span class="bar-key" style="width:42px;text-align:right;font-size:0.62rem">${labels[i]}</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${i === 0 ? 'var(--surface2)' : 'var(--border2)'}">${n}</div></div></div>`;
+          }).join('')}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">Avg guesses (won games): <strong style="color:var(--text)">${avgGuesses}</strong></div>
+        </div>`;
+    } catch {
+      document.getElementById('analyticsView').innerHTML = '<p class="msg err">Failed to load analytics.</p>';
+    }
+  }
+
+  async function loadStats(dateStr) {
     document.getElementById('statsView').innerHTML = '<p class="msg">Loading…</p>';
+    const entry = datesIndex.find(d => d.date === dateStr);
+    const songs  = getSongsForDate(dateStr, entry?.seedOffset ?? 0);
+
     const slots = await Promise.all(
-      songs.map((_, i) => fetch(`/api/songless/stats?date=${TODAY}&slot=${i}`).then(r => r.json()).catch(() => null))
+      songs.map((_, i) => fetch(`/api/songless/stats?date=${dateStr}&slot=${i}`).then(r => r.json()).catch(() => null))
     );
     document.getElementById('statsView').innerHTML = slots.map((stats, i) => {
-      if (!stats) return `<div class="stat-card"><div class="stat-title">Song ${i+1} — error loading</div></div>`;
-      const keys   = ['1','2','3','4','5','6','fail'];
-      const labels = ['1','2','3','4','5','6','X'];
+      if (!stats) return `<div class="stat-card"><div class="stat-title">Song ${i+1} — no data</div></div>`;
+      const keys = ['1','2','3','4','5','6','fail'], labels = ['1','2','3','4','5','6','X'];
       const counts = keys.map(k => stats[k] || 0);
       const total  = stats.total ?? counts.reduce((a,b) => a+b, 0);
       const max    = Math.max(...counts, 1);
@@ -178,31 +263,66 @@
     }).join('');
   }
 
-  loadStats();
-
-  // Actions
-  function setMsg(text, type = '') {
-    const el = document.getElementById('actionMsg');
-    el.textContent = text;
-    el.className = `msg ${type}`;
+  function selectDate(dateStr) {
+    selectedDate = dateStr;
+    document.querySelectorAll('.date-tab').forEach(t => t.classList.toggle('active', t.dataset.date === dateStr));
+    const entry = datesIndex.find(d => d.date === dateStr);
+    renderSongs(dateStr, entry?.seedOffset ?? 0);
+    loadAnalytics(dateStr);
+    loadStats(dateStr);
   }
 
+  async function init() {
+    // Load dates index (past days)
+    let idx = [];
+    try { idx = await fetch('/admin/api/dates').then(r => r.json()); } catch {}
+
+    // Always include today, even if no stats yet
+    const todayCfg = await fetch(`/api/songless/config?date=${TODAY}`).then(r => r.json()).catch(() => ({ seedOffset: 0 }));
+    if (!idx.find(d => d.date === TODAY)) idx.unshift({ date: TODAY, seedOffset: todayCfg.seedOffset || 0 });
+    else idx.find(d => d.date === TODAY).seedOffset = todayCfg.seedOffset || 0;
+
+    datesIndex = idx;
+
+    const tabs = document.getElementById('dateTabs');
+    tabs.innerHTML = idx.map(({ date }) =>
+      `<button class="date-tab${date === TODAY ? ' active' : ''}" data-date="${date}">${date}</button>`
+    ).join('');
+    tabs.addEventListener('click', e => { if (e.target.dataset.date) selectDate(e.target.dataset.date); });
+
+    selectDate(TODAY);
+  }
+
+  // Actions
   document.getElementById('refreshBtn').addEventListener('click', () => {
-    loadStats();
-    setMsg('Stats refreshed.', 'ok');
-    setTimeout(() => setMsg(''), 2000);
+    loadAnalytics(selectedDate);
+    loadStats(selectedDate);
+    setMsg('Refreshed.', 'ok');
+  });
+
+  document.getElementById('shuffleBtn').addEventListener('click', async () => {
+    if (selectedDate !== TODAY) { setMsg('Can only shuffle today.', 'err'); return; }
+    if (!confirm(`Shuffle today's songs? Players who haven't started yet will get a new set.`)) return;
+    try {
+      const res = await fetch('/admin/api/shuffle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: TODAY }) });
+      const { seedOffset } = await res.json();
+      datesIndex.find(d => d.date === TODAY).seedOffset = seedOffset;
+      renderSongs(TODAY, seedOffset);
+      loadStats(TODAY);
+      setMsg(`Songs shuffled (shuffle #${seedOffset}).`, 'ok');
+    } catch { setMsg('Shuffle failed.', 'err'); }
   });
 
   document.getElementById('clearStatsBtn').addEventListener('click', async () => {
-    if (!confirm(`Clear all stats for ${TODAY}?`)) return;
+    if (!confirm(`Clear all stats for ${selectedDate}?`)) return;
     try {
-      await fetch(`/api/songless/stats?date=${TODAY}`, { method: 'DELETE' });
+      await fetch(`/api/songless/stats?date=${selectedDate}`, { method: 'DELETE' });
+      loadStats(selectedDate);
       setMsg('Stats cleared.', 'ok');
-      loadStats();
-    } catch {
-      setMsg('Failed to clear stats.', 'err');
-    }
+    } catch { setMsg('Failed.', 'err'); }
   });
+
+  init();
 </script>
 </body>
 </html>
