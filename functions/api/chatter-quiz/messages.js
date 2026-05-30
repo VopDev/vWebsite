@@ -8,12 +8,17 @@ const CHATTERS = [
   'mizkif', 'buddha', 'jynxzi', 'moistcr1tikal', 'jessesmfi',
   'pokelawls', 'mightyoaks', 'zostradamus', 'cent', 'idini',
   'mdpog', 'omie', 'arthium', 'scorpyl2',
-  // Additional variety — frequent xQc chat participants 2022-2025
+  // Additional xQc chat participants
   'hasanabi', 'adinross', 'cyr', 'esfandtv', 'erobb221',
   'whipitdev', 'natsumiii', 'ohnePixel',
   'destiny', 'forsen', 'sodapoppin', 'zackrawrr', 'wubby',
   'alinity', 'jakenbakeLIVE', 'qtcinderella', 'fuslie',
   'disguisedtoast', 'sykkuno',
+  // Community regulars
+  'm0xyy', 'mendo', 'contravz', 'dankjuicer', 'dolev',
+  'drkness_x', 'esattt', 'its_physikz', 'jdxl', 'juniorrr',
+  'leeqox', 'missdeee', 'prestonalewis', 'thepositivebot', 'tjt811',
+  'trestos3', 'wapze', 'wirezs', 'zoil',
 ].map(u => ({ username: u, display: u }));
 
 const BOTS = new Set([
@@ -24,8 +29,14 @@ const BOTS = new Set([
   'supibot', 'pokemoncommunitygame',
 ]);
 
-// Number of roll variants — each increments the seed to pick different messages from the pool
-const ERA_VARIANTS = 50;
+// Yearly date windows — each era fetches genuinely different historical messages
+const ERAS = [
+  { from: '2021-07-01', to: '2021-12-31' },
+  { from: '2022-01-01', to: '2022-12-31' },
+  { from: '2023-01-01', to: '2023-12-31' },
+  { from: '2024-01-01', to: '2024-12-31' },
+  { from: '2025-01-01', to: '2025-12-31' },
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function todayStr() {
@@ -131,26 +142,32 @@ export async function onRequestGet({ request, env }) {
   const cached = await env.SONGLESS_KV.get(cacheKey, 'json');
   if (cached) return Response.json(cached);
 
-  // Era offset lets admin re-roll — shifts the RNG to pick different messages from the full pool
+  // Era offset cycles through yearly windows so each roll/day fetches genuinely different messages
   const eraOffsetRaw = await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`);
   const eraOffset    = parseInt(eraOffsetRaw || '0', 10) || 0;
+  const era          = ERAS[((dayIndex(date) + eraOffset) % ERAS.length + ERAS.length) % ERAS.length];
 
-  const [fetchedResults, emotes] = await Promise.all([
-    Promise.allSettled(
-      CHATTERS.map(async c => {
-        if (BOTS.has(c.username.toLowerCase())) return null;
-        const r = await fetch(
-          `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000`,
-          { headers: { Accept: 'application/json' } }
-        );
-        if (!r.ok) return null;
+  async function fetchChatter(c) {
+    if (BOTS.has(c.username.toLowerCase())) return null;
+    const base = `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000`;
+
+    // Try the era window first; fall back to no date filter if not enough messages
+    for (const url of [`${base}&from=${era.from}&to=${era.to}`, base]) {
+      try {
+        const r = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!r.ok) continue;
         const data = await r.json();
         const msgs = (data.messages || [])
           .map(m => (m.text || m.message || '').trim())
           .filter(interesting);
-        return msgs.length >= 3 ? { ...c, messages: msgs } : null;
-      })
-    ),
+        if (msgs.length >= 3) return { ...c, messages: msgs };
+      } catch {}
+    }
+    return null;
+  }
+
+  const [fetchedResults, emotes] = await Promise.all([
+    Promise.allSettled(CHATTERS.map(fetchChatter)),
     getEmotes(env),
   ]);
 
@@ -178,7 +195,7 @@ export async function onRequestGet({ request, env }) {
     questions.push({ text: msg, answer: chatter.username, options });
   }
 
-  const result = { questions, emotes, variant: eraOffset % ERA_VARIANTS };
+  const result = { questions, emotes, variant: eraOffset, era: era.from.slice(0, 4) };
   await env.SONGLESS_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: 60 * 60 * 25 });
   return Response.json(result);
 }
