@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatter Quiz Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+      --border: #222; --border2: #333; --text: #f0f0f0; --muted: #555;
+      --green: #22c55e; --red: #ef4444;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; padding: 2rem 1rem 5rem;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .page { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 2rem; }
+    a.back { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.05em; }
+    a.back:hover { color: var(--text); }
+    h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
+    h2 { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    section { display: flex; flex-direction: column; gap: 0.75rem; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.25rem;
+      display: flex; flex-direction: column; gap: 0.55rem;
+    }
+    .q-row { display: flex; flex-direction: column; gap: 0.3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; }
+    .q-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .q-text { font-size: 0.85rem; color: var(--text); }
+    .q-author { font-size: 0.7rem; color: var(--muted); }
+    .q-opts { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.2rem; }
+    .opt-chip {
+      font-size: 0.65rem; padding: 0.15rem 0.45rem; border-radius: 4px;
+      border: 1px solid var(--border2); color: var(--muted);
+    }
+    .opt-chip.correct { border-color: var(--green); color: var(--green); }
+    .btn {
+      padding: 0.55rem 1.1rem; border-radius: 7px; font-size: 0.73rem; font-weight: 700;
+      cursor: pointer; letter-spacing: 0.07em; text-transform: uppercase;
+      border: 1px solid var(--border2); transition: border-color 0.15s, background 0.15s;
+      align-self: flex-start;
+    }
+    .btn-default { background: var(--surface2); color: var(--text); }
+    .btn-default:hover { border-color: #4a4a4a; }
+    .btn-danger { background: #1a0808; color: var(--red); border-color: #3d1a1a; }
+    .btn-danger:hover { background: #2a1010; }
+    .msg { font-size: 0.75rem; color: var(--muted); min-height: 1.2em; }
+    .msg.ok  { color: var(--green); }
+    .msg.err { color: var(--red); }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header style="display:flex;flex-direction:column;gap:0.4rem">
+    <a href="/admin/" class="back">← Admin</a>
+    <h1>Chatter Quiz Admin</h1>
+  </header>
+
+  <section>
+    <h2>Today's Questions — <span id="dateLabel"></span></h2>
+    <div id="questionsView"><p class="msg">Loading…</p></div>
+  </section>
+
+  <section>
+    <h2>Actions</h2>
+    <button class="btn btn-default" id="refreshBtn">Refresh / Re-fetch</button>
+    <button class="btn btn-danger"  id="clearBtn">Clear Today's Cache</button>
+    <p class="msg" id="actionMsg"></p>
+  </section>
+</div>
+
+<script>
+  function todayStr() {
+    const n = new Date();
+    return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
+  }
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  const TODAY = todayStr();
+  document.getElementById('dateLabel').textContent = TODAY;
+
+  function setMsg(text, type = '') {
+    const el = document.getElementById('actionMsg');
+    el.textContent = text; el.className = `msg ${type}`;
+    if (text) setTimeout(() => { if (el.textContent === text) { el.textContent = ''; el.className = 'msg'; } }, 3000);
+  }
+
+  async function loadQuestions() {
+    document.getElementById('questionsView').innerHTML = '<p class="msg">Loading…</p>';
+    try {
+      const { questions } = await fetch(`/api/chatter-quiz/messages?date=${TODAY}`).then(r => r.json());
+      if (!questions || questions.length === 0) {
+        document.getElementById('questionsView').innerHTML = '<p class="msg">No questions cached yet.</p>';
+        return;
+      }
+      document.getElementById('questionsView').innerHTML = `<div class="card">${
+        questions.map((q, i) => `<div class="q-row">
+          <div class="q-author">Question ${i+1} — Answer: <strong>${esc(q.options.find(o => o.username === q.answer)?.display ?? q.answer)}</strong></div>
+          <div class="q-text">${esc(q.text)}</div>
+          <div class="q-opts">${q.options.map(o =>
+            `<span class="opt-chip${o.username === q.answer ? ' correct' : ''}">${esc(o.display)}</span>`
+          ).join('')}</div>
+        </div>`).join('')
+      }</div>`;
+    } catch { document.getElementById('questionsView').innerHTML = '<p class="msg err">Failed to load.</p>'; }
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', async () => {
+    // Clear cache then reload
+    try {
+      await fetch(`/admin/api/chatter-quiz/cache?date=${TODAY}`, { method: 'DELETE' });
+    } catch {}
+    loadQuestions();
+    setMsg('Re-fetching questions from logs…', 'ok');
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', async () => {
+    if (!confirm(`Clear cached questions for ${TODAY}?`)) return;
+    try {
+      await fetch(`/admin/api/chatter-quiz/cache?date=${TODAY}`, { method: 'DELETE' });
+      document.getElementById('questionsView').innerHTML = '<p class="msg">Cache cleared.</p>';
+      setMsg('Cache cleared.', 'ok');
+    } catch { setMsg('Failed.', 'err'); }
+  });
+
+  loadQuestions();
+</script>
+</body>
+</html>

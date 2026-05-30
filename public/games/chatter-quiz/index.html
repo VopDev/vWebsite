@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>xQc Chatter Quiz</title>
+  <link rel="stylesheet" href="/games/chatter-quiz/style.css" />
+</head>
+<body>
+<div class="page">
+  <header>
+    <a href="/games/" class="back-link">← Games</a>
+    <h1>xQc Chatter Quiz</h1>
+    <p class="subtitle">Which chatter said this? · 5 questions daily</p>
+  </header>
+
+  <p class="msg" id="loading">Loading today's quiz…</p>
+  <p class="msg error" id="error" style="display:none"></p>
+
+  <div id="game" style="display:none; flex-direction:column; gap:1.25rem">
+    <div class="progress-row">
+      <div class="progress-dots" id="progressDots"></div>
+      <span class="progress-label" id="progressLabel">1 / 5</span>
+    </div>
+
+    <div class="message-card" id="messageCard">
+      <div class="chat-badge">
+        <svg viewBox="0 0 24 24"><path d="M11.64 5.93h1.43v4.28h-1.43m3.93-4.28H17v4.28h-1.43M7 2L3.43 5.57v12.86h4.28V22l3.58-3.57h2.85L20.57 12V2m-1.43 9.29-2.85 2.85h-2.86l-2.5 2.5v-2.5H7.71V3.43h11.43z"/></svg>
+        xQcOW Chat
+      </div>
+      <p class="message-text" id="messageText"></p>
+      <div class="reveal-author"></div>
+    </div>
+
+    <div class="answers" id="answers"></div>
+  </div>
+
+  <div id="results">
+    <div class="results-score" id="resultsScore"></div>
+    <div class="results-rows"  id="resultsRows"></div>
+    <div class="results-actions">
+      <button class="btn-share" id="shareBtn">Copy Result</button>
+    </div>
+    <p class="next-label" id="nextLabel"></p>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
