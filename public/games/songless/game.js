@@ -63,6 +63,7 @@ function freshState() {
 
 let state     = freshState();
 let previews  = new Array(DAILY_COUNT).fill(null);
+let artworks  = new Array(DAILY_COUNT).fill(null);
 let audio     = null;
 let playTimer = null;
 let progTimer = null;
@@ -113,7 +114,7 @@ async function fetchPreview(title, artist) {
     data.results?.find(t => t.trackName?.toLowerCase().includes(tl)) ||
     data.results?.[0];
 
-  if (best?.previewUrl) return best.previewUrl;
+  if (best?.previewUrl) return { previewUrl: best.previewUrl, artworkUrl: best.artworkUrl100 ?? null };
   throw new Error('no preview');
 }
 
@@ -474,8 +475,10 @@ function render() {
       st.textContent = 'Better luck next song!';
       st.className   = 'result-status lost';
     }
+    const art = artworks[state.slot];
     document.getElementById('resultSong').innerHTML =
       `<div class="result-song-row">
+         ${art ? `<img class="result-artwork" src="${art}" alt="">` : ''}
          <button class="song-play-btn" data-slot="${state.slot}" title="Play preview">${ICON_PLAY}</button>
          <div class="song-info"><strong>${esc(s.title)}</strong><span>${esc(s.artist)}</span></div>
        </div>`;
@@ -494,7 +497,9 @@ function render() {
       `${wonCount}/${DAILY_COUNT} <span>songs guessed</span>`;
     document.getElementById('allDoneRows').innerHTML = state.games.map((gm, i) => {
       const song = SONGS_TODAY[i];
+      const art = artworks[i];
       return `<div class="all-done-row">
+        ${art ? `<img class="row-artwork" src="${art}" alt="">` : ''}
         <button class="song-play-btn" data-slot="${i}" title="Play preview">${ICON_PLAY}</button>
         <div class="song-info">
           <span class="song-name">${esc(song.title)}</span>
@@ -641,11 +646,12 @@ async function init() {
   // Fetch all 5 previews in the background; enable play button as each arrives
   SONGS_TODAY.forEach((song, i) => {
     fetchPreview(song.title, song.artist)
-      .then(url => {
-        previews[i] = url;
+      .then(({ previewUrl, artworkUrl }) => {
+        previews[i] = previewUrl;
+        artworks[i] = artworkUrl;
         if (i === state.slot) { setupAudio(i); render(); }
       })
-      .catch(() => { previews[i] = null; });
+      .catch(() => { previews[i] = null; artworks[i] = null; });
   });
 
   // If the current slot was already finished before page load, open stats

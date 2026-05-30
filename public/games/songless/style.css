@@ -254,6 +254,22 @@ h1 {
 .result-status.lost { color: var(--red); }
 
 .result-song-row { display: flex; align-items: center; gap: 0.75rem; }
+
+.result-artwork {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.row-artwork {
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 .result-song strong { display: block; font-size: 1.05rem; margin-bottom: 0.2rem; }
 .result-song span   { color: var(--muted); font-size: 0.83rem; }
 
