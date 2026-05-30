@@ -468,7 +468,7 @@ function setupEvents() {
   document.getElementById('shareBtn').addEventListener('click', () => {
     const g   = curGame();
     const cnt = g.won ? g.guesses.length : 'X';
-    const txt = `Songless ${TODAY} · Song ${state.slot + 1}/${DAILY_COUNT}\n${cnt}/${MAX_GUESSES}\n\n${emojiRow(g)}\n\nvopori.com/public/games/songless/`;
+    const txt = `Songless ${TODAY} · Song ${state.slot + 1}/${DAILY_COUNT}\n${cnt}/${MAX_GUESSES}\n\n${emojiRow(g)}\n\nvopori.dev/games/songless/`;
     copyText(document.getElementById('shareBtn'), txt);
   });
 
@@ -477,7 +477,7 @@ function setupEvents() {
     const rows = state.games.map((g, i) =>
       `Song ${i+1}: ${emojiRow(g)} (${guessCount(g)})`
     ).join('\n');
-    const txt = `Songless ${TODAY}\n${wonCount}/${DAILY_COUNT} songs\n\n${rows}\n\nvopori.com/public/games/songless/`;
+    const txt = `Songless ${TODAY}\n${wonCount}/${DAILY_COUNT} songs\n\n${rows}\n\nvopori.dev/games/songless/`;
     copyText(document.getElementById('shareAllBtn'), txt);
   });
 
