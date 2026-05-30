@@ -103,6 +103,14 @@ async function fetchEmotes() {
     }
   }
 
+  // Twitch subscriber/channel emotes (no auth required via twitchemotes.com)
+  const twitch = await tryFetch(`https://api.twitchemotes.com/api/v4/channels/${XQC_ID}`);
+  for (const e of twitch?.emotes || []) {
+    if (e.code && e.id) {
+      emotes[e.code] = `https://static-cdn.jtvnw.net/emoticons/v2/${e.id}/default/dark/1.0`;
+    }
+  }
+
   return emotes;
 }
 
