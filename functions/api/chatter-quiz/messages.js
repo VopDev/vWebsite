@@ -145,15 +145,21 @@ export async function onRequestGet({ request, env }) {
   const eraOffsetRaw = await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`);
   const eraOffset    = parseInt(eraOffsetRaw || '0', 10) || 0;
 
+  // Pick 20 chatters randomly per day — avoids timing out on 50+ parallel requests
+  const pickRand    = seededRand(dayIndex(date) * 3571 + eraOffset * 999 + 7);
+  const candidates  = shuffle(CHATTERS.filter(c => !BOTS.has(c.username.toLowerCase())), pickRand).slice(0, 20);
+
   const [fetchedResults, emotes] = await Promise.all([
     Promise.allSettled(
-      CHATTERS.map(async c => {
-        if (BOTS.has(c.username.toLowerCase())) return null;
+      candidates.map(async c => {
         try {
+          const controller = new AbortController();
+          const timer      = setTimeout(() => controller.abort(), 8000);
           const r = await fetch(
-            `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000`,
-            { headers: { Accept: 'application/json' } }
+            `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=1000`,
+            { headers: { Accept: 'application/json' }, signal: controller.signal }
           );
+          clearTimeout(timer);
           if (!r.ok) return null;
           const data = await r.json();
           const msgs = (data.messages || [])
