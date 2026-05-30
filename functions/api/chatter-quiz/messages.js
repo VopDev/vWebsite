@@ -26,7 +26,7 @@ const BOTS = new Set([
   'wizebot', 'cloudbot', 'streamlabs', 'commanderroot', 'own3d_pro',
   'sery_bot', 'creatisbot', 'logviewer', 'soundalerts', 'pretzelrocks',
   'stay_hydrated_bot', 'anotherttvviewer', 'restreambot', 'buttsbot',
-  'supibot', 'pokemoncommunitygame',
+  'supibot', 'pokemoncommunitygame', 'thepositivebot',
 ]);
 
 
