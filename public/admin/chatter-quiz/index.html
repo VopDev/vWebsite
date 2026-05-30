@@ -67,8 +67,9 @@
 
   <section>
     <h2>Actions</h2>
-    <button class="btn btn-default" id="refreshBtn">Refresh / Re-fetch</button>
+    <button class="btn btn-default" id="refreshBtn">Refresh / Re-fetch Today</button>
     <button class="btn btn-danger"  id="clearBtn">Clear Today's Cache</button>
+    <button class="btn btn-danger"  id="clearEmotesBtn">Clear Emote Cache</button>
     <p class="msg" id="actionMsg"></p>
   </section>
 </div>
@@ -124,6 +125,14 @@
       await fetch(`/admin/api/chatter-quiz/cache?date=${TODAY}`, { method: 'DELETE' });
       document.getElementById('questionsView').innerHTML = '<p class="msg">Cache cleared.</p>';
       setMsg('Cache cleared.', 'ok');
+    } catch { setMsg('Failed.', 'err'); }
+  });
+
+  document.getElementById('clearEmotesBtn').addEventListener('click', async () => {
+    if (!confirm('Clear the emote cache? It will be re-fetched on the next question load.')) return;
+    try {
+      await fetch('/admin/api/chatter-quiz/cache?type=emotes', { method: 'DELETE' });
+      setMsg('Emote cache cleared.', 'ok');
     } catch { setMsg('Failed.', 'err'); }
   });
 

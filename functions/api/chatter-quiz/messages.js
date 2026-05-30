@@ -50,8 +50,13 @@ function interesting(text) {
   if (/gifted? .{0,40} [Tt]ier/i.test(text)) return false;
   if (/is gifting \d/i.test(text)) return false;
   if (/just subscribed/i.test(text)) return false;
-  // Needs at least 3 real words (not just emotes / numbers)
-  return text.split(/\s+/).filter(w => /[a-zA-Z]{3,}/.test(w)).length >= 3;
+  // Repetitive spam — if any single word appears more than 3 times, skip
+  const words = text.split(/\s+/);
+  const freq  = {};
+  for (const w of words) freq[w] = (freq[w] || 0) + 1;
+  if (Math.max(...Object.values(freq)) > 3) return false;
+  // Needs at least 3 real words
+  return words.filter(w => /[a-zA-Z]{3,}/.test(w)).length >= 3;
 }
 
 // ── Emote fetching ────────────────────────────────────────────────────────────
