@@ -303,41 +303,40 @@ function renderStatsBars(stats, game) {
 const ICON_PLAY  = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
 const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
 
+function setResultBtn(slot, playing) {
+  const btn = document.querySelector(`.song-play-btn[data-slot="${slot}"]`);
+  if (btn) btn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+}
+
 function stopResultAudio() {
   if (!resultAudio) return;
   resultAudio.pause();
   const prev = resultAudioSlot;
-  resultAudio = null; resultAudioSlot = -1;
-  document.querySelector(`.song-play-btn[data-slot="${prev}"]`)?.replaceChildren();
-  document.querySelector(`.song-play-btn[data-slot="${prev}"]`)?.insertAdjacentHTML('afterbegin', ICON_PLAY);
+  resultAudio = null;
+  resultAudioSlot = -1;
+  setResultBtn(prev, false);
 }
 
 function playResultPreview(slot) {
   const url = previews[slot];
   if (!url) return;
 
-  if (resultAudioSlot === slot && resultAudio) {
-    if (resultAudio.paused) { resultAudio.play(); }
-    else                    { resultAudio.pause(); }
-    updateResultBtn(slot);
+  // Currently playing this slot → pause it
+  if (resultAudioSlot === slot && resultAudio && !resultAudio.paused) {
+    resultAudio.pause();
+    setResultBtn(slot, false);
     return;
   }
 
+  // Start fresh for this slot (handles both first play and resume-after-pause)
   stopResultAudio();
-  stopAudio(); // stop main player too
+  stopAudio();
 
   resultAudioSlot = slot;
   resultAudio = new Audio(url);
   resultAudio.addEventListener('ended', () => stopResultAudio());
   resultAudio.play().catch(() => {});
-  updateResultBtn(slot);
-}
-
-function updateResultBtn(slot) {
-  const btn = document.querySelector(`.song-play-btn[data-slot="${slot}"]`);
-  if (!btn) return;
-  const playing = resultAudioSlot === slot && resultAudio && !resultAudio.paused;
-  btn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+  setResultBtn(slot, true);
 }
 
 // ── Hints ─────────────────────────────────────────────────────────────────────
