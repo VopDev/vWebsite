@@ -105,7 +105,7 @@
 
   <!-- Songs for selected day -->
   <section>
-    <h2>Songs — <span id="selectedDate">…</span></h2>
+    <h2>Songs — <span id="selectedDate">…</span> <span id="seedDisplay" style="font-size:0.6rem;font-weight:700;letter-spacing:0.08em;color:#555;text-transform:none;font-family:monospace"></span></h2>
     <div class="card" id="songList">—</div>
   </section>
 
@@ -125,8 +125,7 @@
   <section>
     <h2>Actions</h2>
     <div class="actions">
-      <button class="btn btn-default" id="refreshBtn">Refresh Stats</button>
-      <button class="btn btn-default" id="shuffleBtn">Shuffle Today's Songs</button>
+      <button class="btn btn-default" id="resetSeedBtn">Reset Seed</button>
       <button class="btn btn-danger"  id="clearStatsBtn">Clear Selected Day Stats</button>
     </div>
     <p class="msg" id="actionMsg"></p>
@@ -183,7 +182,7 @@
 
   function renderSongs(dateStr, seedOffset) {
     const songs = getSongsForDate(dateStr, seedOffset, selectedMode === 'hard');
-    document.getElementById('selectedDate').textContent = dateStr + (seedOffset ? ` (shuffle #${seedOffset})` : '');
+    document.getElementById('selectedDate').textContent = dateStr;
     document.getElementById('songList').innerHTML = songs.map((s, i) =>
       `<div class="song-row">
          <span class="num">${i + 1}</span>
@@ -192,6 +191,14 @@
        </div>`
     ).join('');
     return songs;
+  }
+
+  async function loadSeed(dateStr) {
+    try {
+      const cfg  = await fetch(`/api/songless/config?date=${dateStr}`).then(r => r.json());
+      const el   = document.getElementById('seedDisplay');
+      el.textContent = cfg.seed ? cfg.seed.match(/.{4}/g).join(' ') : '';
+    } catch {}
   }
 
   async function loadAnalytics(dateStr) {
@@ -278,6 +285,7 @@
     document.querySelectorAll('.date-tab').forEach(t => t.classList.toggle('active', t.dataset.date === dateStr));
     const entry = datesIndex.find(d => d.date === dateStr);
     renderSongs(dateStr, entry?.seedOffset ?? 0);
+    loadSeed(dateStr);
     loadAnalytics(dateStr);
     loadStats(dateStr);
   }
@@ -318,23 +326,19 @@
   }
 
   // Actions
-  document.getElementById('refreshBtn').addEventListener('click', () => {
-    loadAnalytics(selectedDate);
-    loadStats(selectedDate);
-    setMsg('Refreshed.', 'ok');
-  });
-
-  document.getElementById('shuffleBtn').addEventListener('click', async () => {
-    if (selectedDate !== TODAY) { setMsg('Can only shuffle today.', 'err'); return; }
-    if (!confirm(`Shuffle today's songs? Players who haven't started yet will get a new set.`)) return;
+  document.getElementById('resetSeedBtn').addEventListener('click', async () => {
+    if (selectedDate !== TODAY) { setMsg('Can only reset today\'s seed.', 'err'); return; }
+    if (!confirm('Reset today\'s seed? Players who haven\'t started will get new songs.')) return;
     try {
       const res = await fetch('/admin/api/shuffle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: TODAY }) });
-      const { seedOffset } = await res.json();
+      const { seedOffset, seed } = await res.json();
       datesIndex.find(d => d.date === TODAY).seedOffset = seedOffset;
       renderSongs(TODAY, seedOffset);
       loadStats(TODAY);
-      setMsg(`Songs shuffled (shuffle #${seedOffset}).`, 'ok');
-    } catch { setMsg('Shuffle failed.', 'err'); }
+      const el = document.getElementById('seedDisplay');
+      el.textContent = seed ? seed.match(/.{4}/g).join(' ') : '';
+      setMsg('Seed reset — new songs and seed generated.', 'ok');
+    } catch { setMsg('Failed.', 'err'); }
   });
 
   document.getElementById('clearStatsBtn').addEventListener('click', async () => {

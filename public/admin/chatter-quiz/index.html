@@ -114,7 +114,7 @@
 
   <!-- Questions -->
   <section>
-    <h2>Today's Questions — <span id="dateLabel"></span> <span id="eraBadge"></span></h2>
+    <h2>Today's Questions — <span id="dateLabel"></span></h2>
     <div id="questionsView"><p class="msg">Loading…</p></div>
   </section>
 
@@ -123,9 +123,8 @@
     <h2>Actions</h2>
     <div class="btn-groups">
       <div class="btn-group">
-        <div class="btn-group-label">Messages</div>
-        <button class="btn btn-default" id="rollBtn">Roll New Messages</button>
-        <button class="btn btn-default" id="refreshBtn">Re-fetch Today</button>
+        <div class="btn-group-label">Questions</div>
+        <button class="btn btn-default" id="rollBtn">Reset Seed</button>
         <button class="btn btn-danger"  id="clearBtn">Clear Cache</button>
       </div>
       <div class="btn-group">
@@ -206,12 +205,10 @@
     document.getElementById('questionsView').innerHTML = '<p class="msg">Loading…</p>';
     try {
       const data = await fetch(`/api/chatter-quiz/messages?date=${TODAY}`).then(r => r.json());
-      const { questions, variant, era } = data;
+      const { questions, seed } = data;
       emotes = data.emotes || {};
-      const badge = document.getElementById('eraBadge');
-      const label = era ? `${era}${variant ? ` · Roll #${variant}` : ''}` : (variant ? `Roll #${variant}` : '');
-      badge.textContent = label || '';
-      badge.className   = label ? 'era-badge' : '';
+      document.getElementById('dateLabel').textContent =
+        TODAY + (seed ? ` — Seed: ${seed.match(/.{4}/g).join(' ')}` : '');
       if (!questions || questions.length === 0) {
         document.getElementById('questionsView').innerHTML = '<p class="msg">No questions cached yet.</p>';
         return;
@@ -230,16 +227,10 @@
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   document.getElementById('rollBtn').addEventListener('click', async () => {
-    setMsg('Rolling new messages…', 'ok');
+    setMsg('Resetting seed — fetching new questions…', 'ok');
     try { await fetch(`/admin/api/chatter-quiz/cache?type=reseed&date=${TODAY}`, { method: 'DELETE' }); } catch {}
     await loadQuestions();
-    setMsg('New messages loaded!', 'ok');
-  });
-
-  document.getElementById('refreshBtn').addEventListener('click', async () => {
-    try { await fetch(`/admin/api/chatter-quiz/cache?date=${TODAY}`, { method: 'DELETE' }); } catch {}
-    loadQuestions();
-    setMsg('Re-fetching questions from logs…', 'ok');
+    setMsg('New seed and questions loaded!', 'ok');
   });
 
   document.getElementById('clearBtn').addEventListener('click', async () => {

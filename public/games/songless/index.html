@@ -13,7 +13,16 @@
     <h1>Vop's Songless</h1>
     <div class="header-row">
       <p class="subtitle">Guess today's 5 songs · 6 tries each</p>
-      <span class="hard-badge" id="hardBadge" style="display:none">⚡ Hard Mode</span>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <span class="hard-badge" id="hardBadge" style="display:none">⚡ Hard Mode</span>
+        <div class="seed-widget" id="seedWidget">
+          <button class="seed-btn" id="seedBtn" title="Today's seed" style="display:none">ⓘ</button>
+          <div class="seed-popup" id="seedPopup">
+            <div class="seed-popup-label">Today's Seed</div>
+            <div class="seed-popup-code" id="seedCode"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 

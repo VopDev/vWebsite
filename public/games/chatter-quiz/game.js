@@ -123,6 +123,18 @@ function renderQuestion() {
   });
 }
 
+function initSeedWidget(seed) {
+  const formatted = seed.match(/.{4}/g).join(' ');
+  document.getElementById('seedCode').textContent = formatted;
+  const btn = document.getElementById('seedBtn');
+  btn.style.display = '';
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('seedPopup').classList.toggle('open');
+  });
+  document.addEventListener('click', () => document.getElementById('seedPopup').classList.remove('open'));
+}
+
 function trackAnswer(questionIndex, correct, complete) {
   fetch('/api/chatter-quiz/stats', {
     method: 'POST',
@@ -211,6 +223,7 @@ async function init() {
 
     questions = data.questions;
     emotes    = data.emotes || {};
+    if (data.seed) initSeedWidget(data.seed);
   } catch {
     document.getElementById('loading').style.display = 'none';
     const err = document.getElementById('error');

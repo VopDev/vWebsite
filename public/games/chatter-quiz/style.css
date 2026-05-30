@@ -35,6 +35,8 @@ body {
 /* ── Header ─────────────────────────────────────────────────────────────────── */
 header { display: flex; flex-direction: column; gap: 0.3rem; }
 
+.header-top { display: flex; align-items: center; justify-content: space-between; }
+
 .back-link {
   color: var(--muted); text-decoration: none;
   font-size: 0.78rem; letter-spacing: 0.05em; transition: color 0.15s;
@@ -47,6 +49,29 @@ h1 {
 }
 
 .subtitle { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.04em; }
+
+/* ── Seed widget ─────────────────────────────────────────────────────────────── */
+.seed-widget { position: relative; }
+.seed-btn {
+  background: none; border: none; cursor: pointer; padding: 0.2rem 0.3rem;
+  color: var(--muted); font-size: 1.1rem; line-height: 1; transition: color 0.15s;
+}
+.seed-btn:hover { color: var(--text); }
+.seed-popup {
+  display: none; position: absolute; right: 0; top: calc(100% + 6px);
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 0.7rem 0.9rem; min-width: 220px; z-index: 100;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+.seed-popup.open { display: block; }
+.seed-popup-label {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem;
+}
+.seed-popup-code {
+  font-family: 'Courier New', Courier, monospace; font-size: 0.82rem;
+  letter-spacing: 0.12em; color: var(--text); word-break: break-all;
+}
 
 /* ── Status messages ─────────────────────────────────────────────────────────── */
 .msg { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 2rem 0; }

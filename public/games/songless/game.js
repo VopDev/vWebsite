@@ -49,6 +49,18 @@ function getDailySongs(offset = 0) {
 const TODAY = todayStr();
 let SONGS_TODAY;
 
+function initSeedWidget(seed) {
+  const formatted = seed.match(/.{4}/g).join(' ');
+  document.getElementById('seedCode').textContent = formatted;
+  const btn = document.getElementById('seedBtn');
+  btn.style.display = '';
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('seedPopup').classList.toggle('open');
+  });
+  document.addEventListener('click', () => document.getElementById('seedPopup').classList.remove('open'));
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 function freshState() {
   return {
@@ -723,6 +735,7 @@ async function init() {
   try {
     const cfg = await fetch(`/api/songless/config?date=${TODAY}`).then(r => r.json());
     SONGS_TODAY = getDailySongs(cfg.seedOffset || 0);
+    if (cfg.seed) initSeedWidget(cfg.seed);
   } catch {
     SONGS_TODAY = getDailySongs(0);
   }

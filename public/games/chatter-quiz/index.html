@@ -9,7 +9,16 @@
 <body>
 <div class="page">
   <header>
-    <a href="/games/" class="back-link">← Games</a>
+    <div class="header-top">
+      <a href="/games/" class="back-link">← Games</a>
+      <div class="seed-widget" id="seedWidget">
+        <button class="seed-btn" id="seedBtn" title="Today's seed" style="display:none">ⓘ</button>
+        <div class="seed-popup" id="seedPopup">
+          <div class="seed-popup-label">Today's Seed</div>
+          <div class="seed-popup-code" id="seedCode"></div>
+        </div>
+      </div>
+    </div>
     <h1>xQc Chatter Quiz</h1>
     <p class="subtitle">Which chatter said this? · 5 questions daily</p>
   </header>

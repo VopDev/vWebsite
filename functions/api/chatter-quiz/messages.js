@@ -29,16 +29,15 @@ const BOTS = new Set([
   'supibot', 'pokemoncommunitygame',
 ]);
 
-// Yearly date windows — each era fetches genuinely different historical messages
-const ERAS = [
-  { from: '2021-07-01', to: '2021-12-31' },
-  { from: '2022-01-01', to: '2022-12-31' },
-  { from: '2023-01-01', to: '2023-12-31' },
-  { from: '2024-01-01', to: '2024-12-31' },
-  { from: '2025-01-01', to: '2025-12-31' },
-];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function generateSeed() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const arr   = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => chars[b % chars.length]).join('');
+}
+
 function todayStr() {
   const n = new Date();
   return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
@@ -142,32 +141,28 @@ export async function onRequestGet({ request, env }) {
   const cached = await env.SONGLESS_KV.get(cacheKey, 'json');
   if (cached) return Response.json(cached);
 
-  // Era offset cycles through yearly windows so each roll/day fetches genuinely different messages
+  // eraOffset shifts the RNG seed so rerolls pick different messages from the same pool
   const eraOffsetRaw = await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`);
   const eraOffset    = parseInt(eraOffsetRaw || '0', 10) || 0;
-  const era          = ERAS[((dayIndex(date) + eraOffset) % ERAS.length + ERAS.length) % ERAS.length];
-
-  async function fetchChatter(c) {
-    if (BOTS.has(c.username.toLowerCase())) return null;
-    const base = `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000`;
-
-    // Try the era window first; fall back to no date filter if not enough messages
-    for (const url of [`${base}&from=${era.from}&to=${era.to}`, base]) {
-      try {
-        const r = await fetch(url, { headers: { Accept: 'application/json' } });
-        if (!r.ok) continue;
-        const data = await r.json();
-        const msgs = (data.messages || [])
-          .map(m => (m.text || m.message || '').trim())
-          .filter(interesting);
-        if (msgs.length >= 3) return { ...c, messages: msgs };
-      } catch {}
-    }
-    return null;
-  }
 
   const [fetchedResults, emotes] = await Promise.all([
-    Promise.allSettled(CHATTERS.map(fetchChatter)),
+    Promise.allSettled(
+      CHATTERS.map(async c => {
+        if (BOTS.has(c.username.toLowerCase())) return null;
+        try {
+          const r = await fetch(
+            `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000`,
+            { headers: { Accept: 'application/json' } }
+          );
+          if (!r.ok) return null;
+          const data = await r.json();
+          const msgs = (data.messages || [])
+            .map(m => (m.text || m.message || '').trim())
+            .filter(interesting);
+          return msgs.length >= 3 ? { ...c, messages: msgs } : null;
+        } catch { return null; }
+      })
+    ),
     getEmotes(env),
   ]);
 
@@ -195,7 +190,7 @@ export async function onRequestGet({ request, env }) {
     questions.push({ text: msg, answer: chatter.username, options });
   }
 
-  const result = { questions, emotes, variant: eraOffset, era: era.from.slice(0, 4) };
+  const result = { questions, emotes, variant: eraOffset, seed: generateSeed() };
   await env.SONGLESS_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: 60 * 60 * 25 });
   return Response.json(result);
 }
