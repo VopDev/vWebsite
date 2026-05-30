@@ -24,23 +24,8 @@ const BOTS = new Set([
   'supibot', 'pokemoncommunitygame',
 ]);
 
-// Quarterly eras going back ~4 years — cycles through different historical windows
-const ERAS = [
-  { from: '2021-07-01', to: '2021-09-30' },
-  { from: '2021-10-01', to: '2021-12-31' },
-  { from: '2022-01-01', to: '2022-03-31' },
-  { from: '2022-04-01', to: '2022-06-30' },
-  { from: '2022-07-01', to: '2022-09-30' },
-  { from: '2022-10-01', to: '2022-12-31' },
-  { from: '2023-01-01', to: '2023-03-31' },
-  { from: '2023-04-01', to: '2023-06-30' },
-  { from: '2023-07-01', to: '2023-09-30' },
-  { from: '2023-10-01', to: '2023-12-31' },
-  { from: '2024-01-01', to: '2024-03-31' },
-  { from: '2024-04-01', to: '2024-06-30' },
-  { from: '2024-07-01', to: '2024-09-30' },
-  { from: '2024-10-01', to: '2024-12-31' },
-];
+// Number of roll variants — each increments the seed to pick different messages from the pool
+const ERA_VARIANTS = 50;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function todayStr() {
@@ -138,17 +123,16 @@ export async function onRequestGet({ request, env }) {
   const cached = await env.SONGLESS_KV.get(cacheKey, 'json');
   if (cached) return Response.json(cached);
 
-  // Era offset lets admin re-roll to a different historical window
+  // Era offset lets admin re-roll — shifts the RNG to pick different messages from the full pool
   const eraOffsetRaw = await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`);
   const eraOffset    = parseInt(eraOffsetRaw || '0', 10) || 0;
-  const era          = ERAS[(((dayIndex(date) % ERAS.length) + eraOffset) % ERAS.length + ERAS.length) % ERAS.length];
 
   const [fetchedResults, emotes] = await Promise.all([
     Promise.allSettled(
       CHATTERS.map(async c => {
         if (BOTS.has(c.username.toLowerCase())) return null;
         const r = await fetch(
-          `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000&from=${era.from}&to=${era.to}`,
+          `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000`,
           { headers: { Accept: 'application/json' } }
         );
         if (!r.ok) return null;
@@ -186,7 +170,7 @@ export async function onRequestGet({ request, env }) {
     questions.push({ text: msg, answer: chatter.username, options });
   }
 
-  const result = { questions, emotes, era: era.from.slice(0, 7) };
+  const result = { questions, emotes, variant: eraOffset % ERA_VARIANTS };
   await env.SONGLESS_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: 60 * 60 * 25 });
   return Response.json(result);
 }

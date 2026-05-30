@@ -100,10 +100,10 @@
     document.getElementById('questionsView').innerHTML = '<p class="msg">Loading…</p>';
     try {
       const data = await fetch(`/api/chatter-quiz/messages?date=${TODAY}`).then(r => r.json());
-      const { questions, era } = data;
+      const { questions, variant } = data;
       const badge = document.getElementById('eraBadge');
-      badge.textContent = era ? era : '';
-      badge.className = era ? 'era-badge' : '';
+      badge.textContent = variant != null ? `Roll #${variant}` : '';
+      badge.className = variant != null ? 'era-badge' : '';
       if (!questions || questions.length === 0) {
         document.getElementById('questionsView').innerHTML = '<p class="msg">No questions cached yet.</p>';
         return;
