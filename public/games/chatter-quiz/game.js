@@ -13,12 +13,22 @@ function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function renderMessage(text) {
+  return text.split(' ').map(word => {
+    const url = emotes[word];
+    return url
+      ? `<img class="emote" src="${esc(url)}" alt="${esc(word)}" title="${esc(word)}">`
+      : esc(word);
+  }).join(' ');
+}
+
 const TODAY     = todayStr();
 const STORE_KEY = `chatter-quiz-${TODAY}`;
 
 let questions = [];
+let emotes    = {};
 let current   = 0;
-let log       = []; // { correct: bool, display: string, text: string }
+let log       = [];
 
 function loadState() {
   try {
@@ -51,7 +61,7 @@ function renderQuestion() {
   const card = document.getElementById('messageCard');
   card.classList.remove('revealed');
   card.querySelector('.reveal-author').innerHTML = '';
-  document.getElementById('messageText').textContent = q.text;
+  document.getElementById('messageText').innerHTML = renderMessage(q.text);
 
   const grid = document.getElementById('answers');
   grid.innerHTML = q.options.map(opt =>
@@ -139,6 +149,7 @@ async function init() {
     }
 
     questions = data.questions;
+    emotes    = data.emotes || {};
   } catch {
     document.getElementById('loading').style.display = 'none';
     const err = document.getElementById('error');

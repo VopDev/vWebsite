@@ -1,28 +1,23 @@
-const CHANNEL   = 'xqc';
-const QUESTIONS = 5;
+const CHANNEL    = 'xqc';
+const XQC_ID     = '71092938'; // xQc's Twitch user ID
+const QUESTIONS  = 5;
 
 const CHATTERS = [
-  'nymn_tv',
-  'crazyslick',
-  'trainwreckstv',
-  'poke',
-  'nmplol',
-  'mizkif',
-  'buddha',
-  'jynxzi',
-  'moistcr1tikal',
-  'jessesmfi',
-  'pokelawls',
-  'mightyoaks',
-  'zostradamus',
-  'cent',
-  'idini',
-  'mdpog',
-  'omie',
-  'arthium',
-  'scorpyl2',
+  'nymn_tv', 'crazyslick', 'trainwreckstv', 'poke', 'nmplol',
+  'mizkif', 'buddha', 'jynxzi', 'moistcr1tikal', 'jessesmfi',
+  'pokelawls', 'mightyoaks', 'zostradamus', 'cent', 'idini',
+  'mdpog', 'omie', 'arthium', 'scorpyl2',
 ].map(u => ({ username: u, display: u }));
 
+const BOTS = new Set([
+  'nightbot', 'streamelements', 'moobot', 'fossabot', 'phantombot',
+  'wizebot', 'cloudbot', 'streamlabs', 'commanderroot', 'own3d_pro',
+  'sery_bot', 'creatisbot', 'logviewer', 'soundalerts', 'pretzelrocks',
+  'stay_hydrated_bot', 'anotherttvviewer', 'restreambot', 'buttsbot',
+  'supibot', 'pokemoncommunitygame',
+]);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function todayStr() {
   const n = new Date();
   return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
@@ -50,10 +45,70 @@ function shuffle(arr, rand) {
 function interesting(text) {
   if (!text || text.length < 20) return false;
   if (/^[!/]/.test(text)) return false;
-  // Needs at least 3 real words (not just emotes/numbers)
+  // Sub / gift notifications
+  if (/subscribed (at Tier|with Prime)/i.test(text)) return false;
+  if (/gifted? .{0,40} [Tt]ier/i.test(text)) return false;
+  if (/is gifting \d/i.test(text)) return false;
+  if (/just subscribed/i.test(text)) return false;
+  // Needs at least 3 real words (not just emotes / numbers)
   return text.split(/\s+/).filter(w => /[a-zA-Z]{3,}/.test(w)).length >= 3;
 }
 
+// ── Emote fetching ────────────────────────────────────────────────────────────
+async function fetchEmotes() {
+  const emotes = {};
+
+  const tryFetch = async url => {
+    try { return await fetch(url, { headers: { Accept: 'application/json' } }).then(r => r.ok ? r.json() : null); }
+    catch { return null; }
+  };
+
+  // BTTV global
+  const bttvGlobal = await tryFetch('https://api.betterttv.net/3/cached/emotes/global');
+  for (const e of bttvGlobal || []) {
+    emotes[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x`;
+  }
+
+  // BTTV channel
+  const bttvChannel = await tryFetch(`https://api.betterttv.net/3/cached/users/twitch/${XQC_ID}`);
+  for (const e of [...(bttvChannel?.channelEmotes || []), ...(bttvChannel?.sharedEmotes || [])]) {
+    emotes[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x`;
+  }
+
+  // 7TV global
+  const stv = await tryFetch('https://7tv.io/v3/emote-sets/global');
+  for (const e of stv?.emotes || []) {
+    if (e.id && e.name) emotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/1x.webp`;
+  }
+
+  // 7TV channel
+  const stvChannel = await tryFetch(`https://7tv.io/v3/users/twitch/${XQC_ID}`);
+  for (const e of stvChannel?.emote_set?.emotes || []) {
+    if (e.id && e.name) emotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/1x.webp`;
+  }
+
+  // FFZ channel
+  const ffz = await tryFetch(`https://api.frankerfacez.com/v1/room/${CHANNEL}`);
+  for (const set of Object.values(ffz?.sets || {})) {
+    for (const e of set.emoticons || []) {
+      const url = e.urls?.['1'] || e.urls?.[1];
+      if (url) emotes[e.name] = url.startsWith('//') ? `https:${url}` : url;
+    }
+  }
+
+  return emotes;
+}
+
+async function getEmotes(env) {
+  const key    = 'chatter-quiz-emotes-v1';
+  const cached = await env.SONGLESS_KV.get(key, 'json');
+  if (cached) return cached;
+  const emotes = await fetchEmotes();
+  await env.SONGLESS_KV.put(key, JSON.stringify(emotes), { expirationTtl: 60 * 60 * 6 });
+  return emotes;
+}
+
+// ── Handler ───────────────────────────────────────────────────────────────────
 export async function onRequestGet({ request, env }) {
   const date     = new URL(request.url).searchParams.get('date') || todayStr();
   const cacheKey = `chatter-quiz-${date}`;
@@ -61,23 +116,27 @@ export async function onRequestGet({ request, env }) {
   const cached = await env.SONGLESS_KV.get(cacheKey, 'json');
   if (cached) return Response.json(cached);
 
-  // Fetch logs for every chatter in parallel
-  const fetched = await Promise.allSettled(
-    CHATTERS.map(async c => {
-      const r = await fetch(
-        `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=500`,
-        { headers: { Accept: 'application/json' } }
-      );
-      if (!r.ok) return null;
-      const data = await r.json();
-      const msgs = (data.messages || [])
-        .map(m => (m.text || m.message || '').trim())
-        .filter(interesting);
-      return msgs.length >= 3 ? { ...c, messages: msgs } : null;
-    })
-  );
+  // Fetch logs + emotes in parallel
+  const [fetchedResults, emotes] = await Promise.all([
+    Promise.allSettled(
+      CHATTERS.map(async c => {
+        if (BOTS.has(c.username.toLowerCase())) return null;
+        const r = await fetch(
+          `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=500`,
+          { headers: { Accept: 'application/json' } }
+        );
+        if (!r.ok) return null;
+        const data = await r.json();
+        const msgs = (data.messages || [])
+          .map(m => (m.text || m.message || '').trim())
+          .filter(interesting);
+        return msgs.length >= 3 ? { ...c, messages: msgs } : null;
+      })
+    ),
+    getEmotes(env),
+  ]);
 
-  const pool = fetched
+  const pool = fetchedResults
     .filter(r => r.status === 'fulfilled' && r.value)
     .map(r => r.value);
 
@@ -85,29 +144,23 @@ export async function onRequestGet({ request, env }) {
     return Response.json({ error: 'Not enough chat data today. Try again later.', questions: [] });
   }
 
-  const rand      = seededRand(dayIndex(date) * 7919 + 3);
-  const shuffled  = shuffle(pool, rand);
+  const rand     = seededRand(dayIndex(date) * 7919 + 3);
+  const shuffled = shuffle(pool, rand);
   const questions = [];
 
   for (const chatter of shuffled) {
     if (questions.length >= QUESTIONS) break;
-
-    // Pick a message from this chatter
-    const msg = chatter.messages[Math.floor(rand() * chatter.messages.length)];
-
-    // 3 wrong options from other chatters
+    const msg    = chatter.messages[Math.floor(rand() * chatter.messages.length)];
     const others = shuffle(pool.filter(c => c.username !== chatter.username), rand);
     if (others.length < 3) continue;
-
     const options = shuffle([
       { username: chatter.username, display: chatter.display },
       ...others.slice(0, 3).map(c => ({ username: c.username, display: c.display })),
     ], rand);
-
     questions.push({ text: msg, answer: chatter.username, options });
   }
 
-  const result = { questions };
+  const result = { questions, emotes };
   await env.SONGLESS_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: 60 * 60 * 25 });
   return Response.json(result);
 }

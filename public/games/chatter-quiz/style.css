@@ -95,9 +95,18 @@ h1 {
 
 .message-text {
   font-size: 1rem;
-  line-height: 1.55;
+  line-height: 1.75;
   color: var(--text);
   word-break: break-word;
+}
+
+.emote {
+  display: inline-block;
+  height: 1.6em;
+  width: auto;
+  vertical-align: middle;
+  margin: 0 1px;
+  image-rendering: auto;
 }
 
 .reveal-author {
