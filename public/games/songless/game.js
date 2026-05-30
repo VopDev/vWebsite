@@ -68,6 +68,9 @@ let playTimer = null;
 let progTimer = null;
 let selected  = null;
 
+let resultAudio     = null;
+let resultAudioSlot = -1;
+
 const statsCache = {};
 
 function curGame() { return state.games[state.slot]; }
@@ -296,6 +299,47 @@ function renderStatsBars(stats, game) {
   }));
 }
 
+// ── Result preview ────────────────────────────────────────────────────────────
+const ICON_PLAY  = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+
+function stopResultAudio() {
+  if (!resultAudio) return;
+  resultAudio.pause();
+  const prev = resultAudioSlot;
+  resultAudio = null; resultAudioSlot = -1;
+  document.querySelector(`.song-play-btn[data-slot="${prev}"]`)?.replaceChildren();
+  document.querySelector(`.song-play-btn[data-slot="${prev}"]`)?.insertAdjacentHTML('afterbegin', ICON_PLAY);
+}
+
+function playResultPreview(slot) {
+  const url = previews[slot];
+  if (!url) return;
+
+  if (resultAudioSlot === slot && resultAudio) {
+    if (resultAudio.paused) { resultAudio.play(); }
+    else                    { resultAudio.pause(); }
+    updateResultBtn(slot);
+    return;
+  }
+
+  stopResultAudio();
+  stopAudio(); // stop main player too
+
+  resultAudioSlot = slot;
+  resultAudio = new Audio(url);
+  resultAudio.addEventListener('ended', () => stopResultAudio());
+  resultAudio.play().catch(() => {});
+  updateResultBtn(slot);
+}
+
+function updateResultBtn(slot) {
+  const btn = document.querySelector(`.song-play-btn[data-slot="${slot}"]`);
+  if (!btn) return;
+  const playing = resultAudioSlot === slot && resultAudio && !resultAudio.paused;
+  btn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+}
+
 // ── Hints ─────────────────────────────────────────────────────────────────────
 function renderHints(song, game) {
   const el    = document.getElementById('hints');
@@ -354,6 +398,7 @@ function makeGuess(song, skipped) {
 function advanceSlot() {
   if (state.slot >= DAILY_COUNT - 1) return;
   closeStatsModal();
+  stopResultAudio();
   state.slot++;
   save();
   setupAudio(state.slot);
@@ -441,9 +486,7 @@ function render() {
     }
     document.getElementById('resultSong').innerHTML =
       `<div class="result-song-row">
-         <a class="song-yt-btn" href="https://www.youtube.com/results?search_query=${encodeURIComponent(s.title + ' ' + s.artist)}" target="_blank" rel="noopener" title="Listen on YouTube">
-           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-         </a>
+         <button class="song-play-btn" data-slot="${state.slot}" title="Play preview">${ICON_PLAY}</button>
          <div class="song-info"><strong>${esc(s.title)}</strong><span>${esc(s.artist)}</span></div>
        </div>`;
     document.getElementById('resultEmoji').textContent = emojiRow(g);
@@ -461,11 +504,8 @@ function render() {
       `${wonCount}/${DAILY_COUNT} <span>songs guessed</span>`;
     document.getElementById('allDoneRows').innerHTML = state.games.map((gm, i) => {
       const song = SONGS_TODAY[i];
-      const ytHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(song.title + ' ' + song.artist)}`;
       return `<div class="all-done-row">
-        <a class="song-yt-btn" href="${ytHref}" target="_blank" rel="noopener" title="Listen on YouTube">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        </a>
+        <button class="song-play-btn" data-slot="${i}" title="Play preview">${ICON_PLAY}</button>
         <div class="song-info">
           <span class="song-name">${esc(song.title)}</span>
           <span class="song-artist">${esc(song.artist)}</span>
@@ -534,6 +574,15 @@ function setupEvents() {
   });
 
   document.getElementById('nextBtn').addEventListener('click', advanceSlot);
+
+  document.getElementById('result').addEventListener('click', e => {
+    const btn = e.target.closest('.song-play-btn');
+    if (btn) playResultPreview(parseInt(btn.dataset.slot, 10));
+  });
+  document.getElementById('allDone').addEventListener('click', e => {
+    const btn = e.target.closest('.song-play-btn');
+    if (btn) playResultPreview(parseInt(btn.dataset.slot, 10));
+  });
 
   document.getElementById('shareBtn').addEventListener('click', () => {
     const g   = curGame();

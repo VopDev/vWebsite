@@ -257,7 +257,7 @@ h1 {
 .result-song strong { display: block; font-size: 1.05rem; margin-bottom: 0.2rem; }
 .result-song span   { color: var(--muted); font-size: 0.83rem; }
 
-.song-yt-btn {
+.song-play-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -267,12 +267,12 @@ h1 {
   background: var(--surface2);
   border: 1px solid var(--border2);
   color: var(--text);
-  text-decoration: none;
+  cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, border-color 0.15s;
 }
-.song-yt-btn:hover { background: var(--border2); border-color: #555; }
-.song-yt-btn svg { width: 14px; height: 14px; }
+.song-play-btn:hover { background: var(--border2); border-color: #555; }
+.song-play-btn svg { width: 14px; height: 14px; pointer-events: none; }
 
 .result-emoji { font-size: 1.3rem; letter-spacing: 0.1em; }
 
