@@ -49,7 +49,6 @@ const TODAY           = todayStr();
 const DEBUG_OFFSET_KEY = `songless-debug-offset-${TODAY}`;
 let   debugOffset      = parseInt(localStorage.getItem(DEBUG_OFFSET_KEY) || '0', 10);
 const SONGS_TODAY      = getDailySongs(debugOffset);
-const STOR_KEY         = `songless-${TODAY}`;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 function freshState() {
@@ -58,6 +57,7 @@ function freshState() {
     games: Array.from({ length: DAILY_COUNT }, () => ({
       guesses: [], clipIdx: 0, over: false, won: false,
     })),
+    submitted: new Array(DAILY_COUNT).fill(false),
   };
 }
 
@@ -74,13 +74,21 @@ function curGame() { return state.games[state.slot]; }
 function curSong() { return SONGS_TODAY[state.slot]; }
 
 // ── Persistence ───────────────────────────────────────────────────────────────
-function save() { localStorage.setItem(STOR_KEY, JSON.stringify(state)); }
+function save() {
+  fetch('/api/songless/state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: TODAY, state }),
+  }).catch(() => {});
+}
 
-function load() {
+async function load() {
   try {
-    const s = JSON.parse(localStorage.getItem(STOR_KEY));
+    const res = await fetch(`/api/songless/state?date=${TODAY}`);
+    const s   = await res.json();
     if (s && Array.isArray(s.games) && s.games.length === DAILY_COUNT) {
       state = s;
+      if (!Array.isArray(state.submitted)) state.submitted = new Array(DAILY_COUNT).fill(false);
       return true;
     }
   } catch {}
@@ -235,15 +243,15 @@ function closeStatsModal() {
 }
 
 async function submitThenFetch(slot, game) {
-  const submitKey = `songless-submitted-${TODAY}-${slot}`;
-  if (!localStorage.getItem(submitKey)) {
+  if (!state.submitted[slot]) {
     try {
       await fetch('/api/songless/result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: TODAY, slot, guessCount: game.guesses.length, won: game.won }),
       });
-      localStorage.setItem(submitKey, '1');
+      state.submitted[slot] = true;
+      save();
     } catch {}
   }
 
@@ -540,22 +548,15 @@ function setupEvents() {
     document.getElementById('debugBar').classList.add('visible');
   }
 
-  document.getElementById('debugReset').addEventListener('click', () => {
-    localStorage.removeItem(STOR_KEY);
-    for (let i = 0; i < DAILY_COUNT; i++) {
-      localStorage.removeItem(`songless-submitted-${TODAY}-${i}`);
-    }
+  document.getElementById('debugReset').addEventListener('click', async () => {
+    try { await fetch(`/api/songless/state?date=${TODAY}`, { method: 'DELETE' }); } catch {}
     location.reload();
   });
 
-  document.getElementById('debugShuffle').addEventListener('click', () => {
-    // Rotate the daily offset so a different set of 5 songs is picked
+  document.getElementById('debugShuffle').addEventListener('click', async () => {
     const next = (debugOffset + DAILY_COUNT) % SONGS.length;
     localStorage.setItem(DEBUG_OFFSET_KEY, String(next));
-    localStorage.removeItem(STOR_KEY);
-    for (let i = 0; i < DAILY_COUNT; i++) {
-      localStorage.removeItem(`songless-submitted-${TODAY}-${i}`);
-    }
+    try { await fetch(`/api/songless/state?date=${TODAY}`, { method: 'DELETE' }); } catch {}
     location.reload();
   });
 
@@ -577,8 +578,8 @@ function copyText(btn, text) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-function init() {
-  load();
+async function init() {
+  await load();
   setupEvents();
 
   // Show the game shell immediately — don't block on audio loading
