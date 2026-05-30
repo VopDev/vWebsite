@@ -1,12 +1,19 @@
-const CHANNEL    = 'xqc';
-const XQC_ID     = '71092938'; // xQc's Twitch user ID
-const QUESTIONS  = 5;
+const CHANNEL   = 'xqc';
+const XQC_ID    = '71092938'; // xQc's Twitch user ID
+const QUESTIONS = 5;
 
 const CHATTERS = [
+  // Core regulars
   'nymn_tv', 'crazyslick', 'trainwreckstv', 'poke', 'nmplol',
   'mizkif', 'buddha', 'jynxzi', 'moistcr1tikal', 'jessesmfi',
   'pokelawls', 'mightyoaks', 'zostradamus', 'cent', 'idini',
   'mdpog', 'omie', 'arthium', 'scorpyl2',
+  // Additional variety — frequent xQc chat participants 2022-2025
+  'hasanabi', 'adinross', 'cyr', 'esfandtv', 'erobb221',
+  'whipitdev', 'natsumiii', 'ohnePixel',
+  'destiny', 'forsen', 'sodapoppin', 'zackrawrr', 'wubby',
+  'alinity', 'jakenbakeLIVE', 'qtcinderella', 'fuslie',
+  'disguisedtoast', 'sykkuno',
 ].map(u => ({ username: u, display: u }));
 
 const BOTS = new Set([
@@ -16,6 +23,24 @@ const BOTS = new Set([
   'stay_hydrated_bot', 'anotherttvviewer', 'restreambot', 'buttsbot',
   'supibot', 'pokemoncommunitygame',
 ]);
+
+// Quarterly eras going back ~4 years — cycles through different historical windows
+const ERAS = [
+  { from: '2021-07-01', to: '2021-09-30' },
+  { from: '2021-10-01', to: '2021-12-31' },
+  { from: '2022-01-01', to: '2022-03-31' },
+  { from: '2022-04-01', to: '2022-06-30' },
+  { from: '2022-07-01', to: '2022-09-30' },
+  { from: '2022-10-01', to: '2022-12-31' },
+  { from: '2023-01-01', to: '2023-03-31' },
+  { from: '2023-04-01', to: '2023-06-30' },
+  { from: '2023-07-01', to: '2023-09-30' },
+  { from: '2023-10-01', to: '2023-12-31' },
+  { from: '2024-01-01', to: '2024-03-31' },
+  { from: '2024-04-01', to: '2024-06-30' },
+  { from: '2024-07-01', to: '2024-09-30' },
+  { from: '2024-10-01', to: '2024-12-31' },
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function todayStr() {
@@ -45,17 +70,14 @@ function shuffle(arr, rand) {
 function interesting(text) {
   if (!text || text.length < 20) return false;
   if (/^[!/]/.test(text)) return false;
-  // Sub / gift notifications
   if (/subscribed (at Tier|with Prime)/i.test(text)) return false;
   if (/gifted? .{0,40} [Tt]ier/i.test(text)) return false;
   if (/is gifting \d/i.test(text)) return false;
   if (/just subscribed/i.test(text)) return false;
-  // Repetitive spam — if any single word appears more than 3 times, skip
   const words = text.split(/\s+/);
   const freq  = {};
   for (const w of words) freq[w] = (freq[w] || 0) + 1;
   if (Math.max(...Object.values(freq)) > 3) return false;
-  // Needs at least 3 real words
   return words.filter(w => /[a-zA-Z]{3,}/.test(w)).length >= 3;
 }
 
@@ -68,31 +90,26 @@ async function fetchEmotes() {
     catch { return null; }
   };
 
-  // BTTV global
   const bttvGlobal = await tryFetch('https://api.betterttv.net/3/cached/emotes/global');
   for (const e of bttvGlobal || []) {
     emotes[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x`;
   }
 
-  // BTTV channel
   const bttvChannel = await tryFetch(`https://api.betterttv.net/3/cached/users/twitch/${XQC_ID}`);
   for (const e of [...(bttvChannel?.channelEmotes || []), ...(bttvChannel?.sharedEmotes || [])]) {
     emotes[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x`;
   }
 
-  // 7TV global
   const stv = await tryFetch('https://7tv.io/v3/emote-sets/global');
   for (const e of stv?.emotes || []) {
     if (e.id && e.name) emotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/1x.webp`;
   }
 
-  // 7TV channel
   const stvChannel = await tryFetch(`https://7tv.io/v3/users/twitch/${XQC_ID}`);
   for (const e of stvChannel?.emote_set?.emotes || []) {
     if (e.id && e.name) emotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/1x.webp`;
   }
 
-  // FFZ channel
   const ffz = await tryFetch(`https://api.frankerfacez.com/v1/room/${CHANNEL}`);
   for (const set of Object.values(ffz?.sets || {})) {
     for (const e of set.emoticons || []) {
@@ -121,13 +138,17 @@ export async function onRequestGet({ request, env }) {
   const cached = await env.SONGLESS_KV.get(cacheKey, 'json');
   if (cached) return Response.json(cached);
 
-  // Fetch logs + emotes in parallel
+  // Era offset lets admin re-roll to a different historical window
+  const eraOffsetRaw = await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`);
+  const eraOffset    = parseInt(eraOffsetRaw || '0', 10) || 0;
+  const era          = ERAS[(((dayIndex(date) % ERAS.length) + eraOffset) % ERAS.length + ERAS.length) % ERAS.length];
+
   const [fetchedResults, emotes] = await Promise.all([
     Promise.allSettled(
       CHATTERS.map(async c => {
         if (BOTS.has(c.username.toLowerCase())) return null;
         const r = await fetch(
-          `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=500`,
+          `https://logs.ivr.fi/channel/${CHANNEL}/user/${c.username}?json=true&limit=5000&from=${era.from}&to=${era.to}`,
           { headers: { Accept: 'application/json' } }
         );
         if (!r.ok) return null;
@@ -146,11 +167,11 @@ export async function onRequestGet({ request, env }) {
     .map(r => r.value);
 
   if (pool.length < 4) {
-    return Response.json({ error: 'Not enough chat data today. Try again later.', questions: [] });
+    return Response.json({ error: 'Not enough chat data for this period. Try again later.', questions: [] });
   }
 
-  const rand     = seededRand(dayIndex(date) * 7919 + 3);
-  const shuffled = shuffle(pool, rand);
+  const rand      = seededRand(dayIndex(date) * 7919 + eraOffset * 1337 + 3);
+  const shuffled  = shuffle(pool, rand);
   const questions = [];
 
   for (const chatter of shuffled) {
@@ -165,7 +186,7 @@ export async function onRequestGet({ request, env }) {
     questions.push({ text: msg, answer: chatter.username, options });
   }
 
-  const result = { questions, emotes };
+  const result = { questions, emotes, era: era.from.slice(0, 7) };
   await env.SONGLESS_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: 60 * 60 * 25 });
   return Response.json(result);
 }

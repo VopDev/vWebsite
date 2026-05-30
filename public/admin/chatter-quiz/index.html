@@ -51,6 +51,11 @@
     .msg { font-size: 0.75rem; color: var(--muted); min-height: 1.2em; }
     .msg.ok  { color: var(--green); }
     .msg.err { color: var(--red); }
+    .era-badge {
+      display: inline-block; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+      padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid #2a3a2a; color: var(--green);
+      background: #0d1a0d; text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -61,12 +66,13 @@
   </header>
 
   <section>
-    <h2>Today's Questions — <span id="dateLabel"></span></h2>
+    <h2>Today's Questions — <span id="dateLabel"></span> <span id="eraBadge"></span></h2>
     <div id="questionsView"><p class="msg">Loading…</p></div>
   </section>
 
   <section>
     <h2>Actions</h2>
+    <button class="btn btn-default" id="rollBtn">Roll New Messages for Today</button>
     <button class="btn btn-default" id="refreshBtn">Refresh / Re-fetch Today</button>
     <button class="btn btn-danger"  id="clearBtn">Clear Today's Cache</button>
     <button class="btn btn-danger"  id="clearEmotesBtn">Clear Emote Cache</button>
@@ -93,7 +99,11 @@
   async function loadQuestions() {
     document.getElementById('questionsView').innerHTML = '<p class="msg">Loading…</p>';
     try {
-      const { questions } = await fetch(`/api/chatter-quiz/messages?date=${TODAY}`).then(r => r.json());
+      const data = await fetch(`/api/chatter-quiz/messages?date=${TODAY}`).then(r => r.json());
+      const { questions, era } = data;
+      const badge = document.getElementById('eraBadge');
+      badge.textContent = era ? era : '';
+      badge.className = era ? 'era-badge' : '';
       if (!questions || questions.length === 0) {
         document.getElementById('questionsView').innerHTML = '<p class="msg">No questions cached yet.</p>';
         return;
@@ -110,8 +120,16 @@
     } catch { document.getElementById('questionsView').innerHTML = '<p class="msg err">Failed to load.</p>'; }
   }
 
+  document.getElementById('rollBtn').addEventListener('click', async () => {
+    setMsg('Rolling new messages from a different time period…', 'ok');
+    try {
+      await fetch(`/admin/api/chatter-quiz/cache?type=reseed&date=${TODAY}`, { method: 'DELETE' });
+    } catch {}
+    await loadQuestions();
+    setMsg('New messages loaded!', 'ok');
+  });
+
   document.getElementById('refreshBtn').addEventListener('click', async () => {
-    // Clear cache then reload
     try {
       await fetch(`/admin/api/chatter-quiz/cache?date=${TODAY}`, { method: 'DELETE' });
     } catch {}
