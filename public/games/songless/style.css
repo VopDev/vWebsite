@@ -454,23 +454,26 @@ h1 {
 #game.visible { display: flex; }
 
 /* ── Hints ───────────────────────────────────────────────────────────────────── */
-#hints:empty { display: none; }
+#hints { min-height: 1.875rem; }
+#hints:empty { visibility: hidden; }
 
 .hints-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  overflow: hidden;
 }
 
 .hint-chip {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   background: var(--surface);
   border: 1px solid var(--border2);
   border-radius: 6px;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
   animation: hintIn 0.2s ease;
 }
 
