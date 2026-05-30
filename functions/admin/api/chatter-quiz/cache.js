@@ -9,11 +9,24 @@ export async function onRequestDelete({ request, env }) {
   }
 
   if (type === 'reseed' && date) {
-    // Increment era offset so next fetch pulls from a different historical window
     const current = parseInt(await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`) || '0', 10) || 0;
     await env.SONGLESS_KV.put(`chatter-quiz-era-${date}`, String(current + 1), { expirationTtl: 60 * 60 * 48 });
     await env.SONGLESS_KV.delete(`chatter-quiz-${date}`);
     return new Response('OK', { status: 200 });
+  }
+
+  if (type === 'states' && date) {
+    // Delete all per-user game states for the given date
+    let deleted = 0;
+    let cursor;
+    do {
+      const result = await env.SONGLESS_KV.list({ prefix: 'cq-state-', limit: 1000, cursor });
+      const keys   = result.keys.filter(k => k.name.endsWith(`-${date}`));
+      await Promise.all(keys.map(k => env.SONGLESS_KV.delete(k.name)));
+      deleted += keys.length;
+      cursor = result.list_complete ? undefined : result.cursor;
+    } while (cursor);
+    return Response.json({ deleted });
   }
 
   if (!date) return new Response('Bad request', { status: 400 });

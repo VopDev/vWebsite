@@ -9,7 +9,7 @@
     :root {
       --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
       --border: #222; --border2: #333; --text: #f0f0f0; --muted: #555;
-      --green: #22c55e; --red: #ef4444;
+      --green: #22c55e; --red: #ef4444; --blue: #3b82f6; --yellow: #f59e0b;
     }
     body {
       background: var(--bg); color: var(--text);
@@ -17,20 +17,24 @@
       min-height: 100vh; padding: 2rem 1rem 5rem;
       display: flex; flex-direction: column; align-items: center;
     }
-    .page { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 2rem; }
+    .page { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 2rem; }
     a.back { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.05em; }
     a.back:hover { color: var(--text); }
     h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
     h2 { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
     section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    /* Cards */
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; padding: 1rem 1.25rem;
       display: flex; flex-direction: column; gap: 0.55rem;
     }
+
+    /* Questions */
     .q-row { display: flex; flex-direction: column; gap: 0.3rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; }
     .q-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .q-text { font-size: 0.85rem; color: var(--text); }
+    .q-text { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
     .q-author { font-size: 0.7rem; color: var(--muted); }
     .q-opts { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.2rem; }
     .opt-chip {
@@ -38,16 +42,45 @@
       border: 1px solid var(--border2); color: var(--muted);
     }
     .opt-chip.correct { border-color: var(--green); color: var(--green); }
+
+    /* Stat tiles */
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem;
+    }
+    .stat-tile {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.85rem 0.6rem; display: flex; flex-direction: column;
+      align-items: center; gap: 0.25rem; text-align: center;
+    }
+    .stat-tile .val { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+    .stat-tile .lbl { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .stat-tile .sub { font-size: 0.65rem; color: var(--muted); }
+
+    /* Per-question bars */
+    .pq-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pq-row { display: flex; flex-direction: column; gap: 0.2rem; }
+    .pq-label { font-size: 0.65rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .pq-bar-track { height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; display: flex; }
+    .pq-bar-correct { background: var(--green); height: 100%; transition: width 0.4s; }
+    .pq-bar-wrong   { background: var(--red);   height: 100%; transition: width 0.4s; }
+
+    /* Buttons */
     .btn {
       padding: 0.55rem 1.1rem; border-radius: 7px; font-size: 0.73rem; font-weight: 700;
       cursor: pointer; letter-spacing: 0.07em; text-transform: uppercase;
       border: 1px solid var(--border2); transition: border-color 0.15s, background 0.15s;
-      align-self: flex-start;
+      white-space: nowrap;
     }
     .btn-default { background: var(--surface2); color: var(--text); }
     .btn-default:hover { border-color: #4a4a4a; }
     .btn-danger { background: #1a0808; color: var(--red); border-color: #3d1a1a; }
     .btn-danger:hover { background: #2a1010; }
+
+    /* Button groups */
+    .btn-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .btn-group-label { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.1rem; }
+
     .msg { font-size: 0.75rem; color: var(--muted); min-height: 1.2em; }
     .msg.ok  { color: var(--green); }
     .msg.err { color: var(--red); }
@@ -65,17 +98,42 @@
     <h1>Chatter Quiz Admin</h1>
   </header>
 
+  <!-- Analytics -->
+  <section>
+    <h2>Today's Stats — <span id="statsDate"></span></h2>
+    <div class="stat-grid" id="statTiles">
+      <div class="stat-tile"><div class="val" id="sPlayers">—</div><div class="lbl">Players</div></div>
+      <div class="stat-tile"><div class="val" id="sAnswered">—</div><div class="lbl">Answers</div></div>
+      <div class="stat-tile"><div class="val" id="sCorrect">—</div><div class="lbl">Correct</div><div class="sub" id="sCorrectPct"></div></div>
+      <div class="stat-tile"><div class="val" id="sComplete">—</div><div class="lbl">Completed</div></div>
+    </div>
+    <div class="card">
+      <div class="pq-list" id="perQuestion"><p class="msg">Loading…</p></div>
+    </div>
+  </section>
+
+  <!-- Questions -->
   <section>
     <h2>Today's Questions — <span id="dateLabel"></span> <span id="eraBadge"></span></h2>
     <div id="questionsView"><p class="msg">Loading…</p></div>
   </section>
 
+  <!-- Actions -->
   <section>
     <h2>Actions</h2>
-    <button class="btn btn-default" id="rollBtn">Roll New Messages for Today</button>
-    <button class="btn btn-default" id="refreshBtn">Refresh / Re-fetch Today</button>
-    <button class="btn btn-danger"  id="clearBtn">Clear Today's Cache</button>
-    <button class="btn btn-danger"  id="clearEmotesBtn">Clear Emote Cache</button>
+    <div class="btn-groups">
+      <div class="btn-group">
+        <div class="btn-group-label">Messages</div>
+        <button class="btn btn-default" id="rollBtn">Roll New Messages</button>
+        <button class="btn btn-default" id="refreshBtn">Re-fetch Today</button>
+        <button class="btn btn-danger"  id="clearBtn">Clear Cache</button>
+      </div>
+      <div class="btn-group">
+        <div class="btn-group-label">Players</div>
+        <button class="btn btn-danger"  id="resetStatesBtn">Reset All Players</button>
+        <button class="btn btn-danger"  id="clearEmotesBtn">Clear Emotes</button>
+      </div>
+    </div>
     <p class="msg" id="actionMsg"></p>
   </section>
 </div>
@@ -86,9 +144,11 @@
     return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
   }
   function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function pct(n, d) { return d ? Math.round(n / d * 100) + '%' : '—'; }
 
   const TODAY = todayStr();
   document.getElementById('dateLabel').textContent = TODAY;
+  document.getElementById('statsDate').textContent = TODAY;
 
   function setMsg(text, type = '') {
     const el = document.getElementById('actionMsg');
@@ -96,6 +156,41 @@
     if (text) setTimeout(() => { if (el.textContent === text) { el.textContent = ''; el.className = 'msg'; } }, 3000);
   }
 
+  // ── Analytics ────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const s = await fetch(`/api/chatter-quiz/stats?date=${TODAY}`).then(r => r.json());
+      document.getElementById('sPlayers').textContent  = s.players ?? 0;
+      document.getElementById('sAnswered').textContent = s.totalAnswers ?? 0;
+      document.getElementById('sComplete').textContent = s.completions ?? 0;
+      const correctVal = s.correct ?? 0;
+      document.getElementById('sCorrect').textContent  = correctVal;
+      document.getElementById('sCorrectPct').textContent = pct(correctVal, s.totalAnswers);
+
+      const pq = s.perQuestion || [];
+      document.getElementById('perQuestion').innerHTML = pq.length
+        ? pq.map((q, i) => {
+            const total = (q.correct || 0) + (q.wrong || 0);
+            const cPct  = total ? q.correct / total * 100 : 0;
+            const wPct  = total ? q.wrong   / total * 100 : 0;
+            return `<div class="pq-row">
+              <div class="pq-label">
+                <span>Q${i+1}</span>
+                <span>${q.correct ?? 0} correct · ${q.wrong ?? 0} wrong</span>
+              </div>
+              <div class="pq-bar-track">
+                <div class="pq-bar-correct" style="width:${cPct}%"></div>
+                <div class="pq-bar-wrong"   style="width:${wPct}%"></div>
+              </div>
+            </div>`;
+          }).join('')
+        : '<p class="msg">No answers recorded yet.</p>';
+    } catch {
+      document.getElementById('perQuestion').innerHTML = '<p class="msg err">Failed to load stats.</p>';
+    }
+  }
+
+  // ── Questions ────────────────────────────────────────────────────────────────
   let emotes = {};
 
   function renderMessage(text) {
@@ -115,14 +210,14 @@
       emotes = data.emotes || {};
       const badge = document.getElementById('eraBadge');
       badge.textContent = variant != null ? `Roll #${variant}` : '';
-      badge.className = variant != null ? 'era-badge' : '';
+      badge.className   = variant != null ? 'era-badge' : '';
       if (!questions || questions.length === 0) {
         document.getElementById('questionsView').innerHTML = '<p class="msg">No questions cached yet.</p>';
         return;
       }
       document.getElementById('questionsView').innerHTML = `<div class="card">${
         questions.map((q, i) => `<div class="q-row">
-          <div class="q-author">Question ${i+1} — Answer: <strong>${esc(q.options.find(o => o.username === q.answer)?.display ?? q.answer)}</strong></div>
+          <div class="q-author">Q${i+1} — Answer: <strong>${esc(q.options.find(o => o.username === q.answer)?.display ?? q.answer)}</strong></div>
           <div class="q-text">${renderMessage(q.text)}</div>
           <div class="q-opts">${q.options.map(o =>
             `<span class="opt-chip${o.username === q.answer ? ' correct' : ''}">${esc(o.display)}</span>`
@@ -132,19 +227,16 @@
     } catch { document.getElementById('questionsView').innerHTML = '<p class="msg err">Failed to load.</p>'; }
   }
 
+  // ── Actions ──────────────────────────────────────────────────────────────────
   document.getElementById('rollBtn').addEventListener('click', async () => {
-    setMsg('Rolling new messages from a different time period…', 'ok');
-    try {
-      await fetch(`/admin/api/chatter-quiz/cache?type=reseed&date=${TODAY}`, { method: 'DELETE' });
-    } catch {}
+    setMsg('Rolling new messages…', 'ok');
+    try { await fetch(`/admin/api/chatter-quiz/cache?type=reseed&date=${TODAY}`, { method: 'DELETE' }); } catch {}
     await loadQuestions();
     setMsg('New messages loaded!', 'ok');
   });
 
   document.getElementById('refreshBtn').addEventListener('click', async () => {
-    try {
-      await fetch(`/admin/api/chatter-quiz/cache?date=${TODAY}`, { method: 'DELETE' });
-    } catch {}
+    try { await fetch(`/admin/api/chatter-quiz/cache?date=${TODAY}`, { method: 'DELETE' }); } catch {}
     loadQuestions();
     setMsg('Re-fetching questions from logs…', 'ok');
   });
@@ -158,6 +250,15 @@
     } catch { setMsg('Failed.', 'err'); }
   });
 
+  document.getElementById('resetStatesBtn').addEventListener('click', async () => {
+    if (!confirm(`Reset all players' progress for ${TODAY}? They'll be able to play again.`)) return;
+    try {
+      const res  = await fetch(`/admin/api/chatter-quiz/cache?type=states&date=${TODAY}`, { method: 'DELETE' });
+      const data = await res.json();
+      setMsg(`Reset ${data.deleted} player state(s).`, 'ok');
+    } catch { setMsg('Failed.', 'err'); }
+  });
+
   document.getElementById('clearEmotesBtn').addEventListener('click', async () => {
     if (!confirm('Clear the emote cache? It will be re-fetched on the next question load.')) return;
     try {
@@ -166,6 +267,8 @@
     } catch { setMsg('Failed.', 'err'); }
   });
 
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  loadStats();
   loadQuestions();
 </script>
 </body>

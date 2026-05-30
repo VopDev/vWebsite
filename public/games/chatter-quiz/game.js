@@ -123,6 +123,14 @@ function renderQuestion() {
   });
 }
 
+function trackAnswer(questionIndex, correct, complete) {
+  fetch('/api/chatter-quiz/stats', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: TODAY, questionIndex, correct, complete, first: questionIndex === 0 }),
+  }).catch(() => {});
+}
+
 function handleAnswer(selectedUsername) {
   const q       = questions[current];
   const correct = selectedUsername === q.answer;
@@ -146,6 +154,7 @@ function handleAnswer(selectedUsername) {
   log.push({ correct, display: answer.display, text: q.text });
   save();
   checkAchievements(correct, elapsed);
+  trackAnswer(current, correct, current + 1 >= questions.length);
 
   setTimeout(() => {
     current++;
