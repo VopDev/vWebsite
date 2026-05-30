@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sabastian Hassler – Resume</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #5b9bd5;
+      --accent-light: #7ab3e0;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #2d3748;
+      --bg: #0f1117;
+      --card: #1a1f2e;
+    }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    /* ── Download bar ── */
+    .toolbar {
+      max-width: 820px;
+      margin: 0 auto 1.25rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--accent);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: .875rem;
+      font-weight: 600;
+      padding: .55rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .btn-download:hover { background: var(--accent-light); }
+    .btn-download svg { flex-shrink: 0; }
+
+    /* ── Resume card ── */
+    .resume {
+      max-width: 820px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3rem 3.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+
+    /* ── Header ── */
+    .resume-header { margin-bottom: 1.75rem; border-bottom: 2px solid var(--accent); padding-bottom: 1rem; }
+    .resume-header h1 { font-size: 2rem; color: var(--accent); letter-spacing: .02em; }
+    .contact {
+      margin-top: .4rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: .875rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: .25rem .75rem;
+      align-items: center;
+    }
+    .contact a { color: var(--accent-light); text-decoration: none; }
+    .contact a:hover { text-decoration: underline; }
+    .contact .sep { color: var(--border); }
+
+    /* ── Sections ── */
+    section { margin-top: 1.75rem; }
+    .section-title {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .3rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Job entries ── */
+    .job { margin-bottom: 1.4rem; }
+    .job:last-child { margin-bottom: 0; }
+    .job-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: .2rem;
+    }
+    .job-header .employer { font-weight: 700; font-size: 1rem; }
+    .job-header .dates {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: .825rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .job-meta {
+      font-style: italic;
+      font-size: .9rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: .1rem;
+      margin-bottom: .55rem;
+    }
+    .job-meta .location {
+      font-style: normal;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    ul.bullets {
+      padding-left: 1.3rem;
+      font-size: .9rem;
+      line-height: 1.65;
+      color: var(--text);
+    }
+    ul.bullets li { margin-bottom: .2rem; }
+
+    /* ── Education ── */
+    .edu { margin-bottom: 1.2rem; }
+    .edu:last-child { margin-bottom: 0; }
+    .edu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: .2rem;
+    }
+    .edu-header .school { font-weight: 700; font-size: 1rem; }
+    .edu-header .dates {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: .825rem;
+      color: var(--muted);
+    }
+    .edu-meta {
+      display: flex;
+      justify-content: space-between;
+      font-style: italic;
+      font-size: .9rem;
+      color: var(--muted);
+      margin-top: .1rem;
+      margin-bottom: .45rem;
+    }
+    .edu-meta .location {
+      font-style: normal;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+
+    /* ── Skills section ── */
+    .skills-list {
+      font-size: .9rem;
+      line-height: 1.75;
+    }
+    .skills-list p { margin-bottom: .3rem; }
+    .skills-list strong { color: var(--text); }
+
+    /* ── Print styles ── */
+    @media print {
+      :root {
+        --accent: #1a3a5c;
+        --accent-light: #2a5298;
+        --text: #1a1a1a;
+        --muted: #555;
+        --border: #d0d7de;
+        --bg: #ffffff;
+        --card: #ffffff;
+      }
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none; }
+      .resume {
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 1.5cm 1.8cm;
+        max-width: 100%;
+      }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .resume { padding: 1.5rem 1.25rem; }
+      .job-header, .edu-header { flex-direction: column; }
+      .job-header .dates, .edu-header .dates { align-self: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Download / Print bar -->
+  <div class="toolbar">
+    <button class="btn-download" onclick="window.print()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download PDF
+    </button>
+  </div>
+
+  <article class="resume">
+
+    <!-- Header -->
+    <header class="resume-header">
+      <h1>Sabastian Hassler</h1>
+      <div class="contact">
+        <a href="mailto:hasslersabastian@gmail.com">hasslersabastian@gmail.com</a>
+        <span class="sep">|</span>
+        <a href="tel:7192147449">(719) 214-7449</a>
+        <span class="sep">|</span>
+        <span>Pueblo, CO 81003</span>
+        <span class="sep">|</span>
+        <span>Proven Leader</span>
+      </div>
+    </header>
+
+    <!-- Work Experience -->
+    <section>
+      <div class="section-title">Work Experience</div>
+
+      <!-- UCHealth -->
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">UCHealth Parkview</span>
+          <span class="dates">Nov. 2025 – Present</span>
+        </div>
+        <div class="job-meta">
+          <span>Patient Transport</span>
+          <span class="location">Pueblo, CO</span>
+        </div>
+        <ul class="bullets">
+          <li>Transport patients safely throughout hospital using wheelchairs, stretchers, and beds</li>
+          <li>Assist patients with transfers, including entering/exiting vehicles and mobility support</li>
+          <li>Handle transport of medical equipment, specimens, and supplies between departments</li>
+          <li>Support care of patients using oxygen, IV pumps, monitors, and other medical devices</li>
+          <li>Provide directions and assistance to patients and visitors in a professional manner</li>
+          <li>Collaborate with healthcare staff to ensure timely and efficient patient flow</li>
+          <li>Maintain safety standards in a fast-paced clinical environment</li>
+          <li>Assist with sensitive duties, including transport to the morgue when required</li>
+        </ul>
+      </div>
+
+      <!-- McAlister's -->
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">McAlister's Deli</span>
+          <span class="dates">Jul. 2023 – Oct. 2025</span>
+        </div>
+        <div class="job-meta">
+          <span>Kitchen Manager</span>
+          <span class="location">Pueblo, CO</span>
+        </div>
+        <ul class="bullets">
+          <li>Supervised and trained kitchen staff to maintain efficient, high-quality food service</li>
+          <li>Ensured all food met McAlister's Deli standards for quality, safety, and consistency</li>
+          <li>Managed inventory, stocking, and waste control to support smooth operations</li>
+          <li>Coordinated kitchen workflow during high-volume shifts to meet service times</li>
+        </ul>
+      </div>
+
+      <!-- Altitude -->
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">Altitude Trampoline Park</span>
+          <span class="dates">Jul. 2020 – Jun. 2023</span>
+        </div>
+        <div class="job-meta">
+          <span>Floor Manager</span>
+          <span class="location">Pueblo, CO</span>
+        </div>
+        <ul class="bullets">
+          <li>Supervised staff and daily operations to ensure a safe, efficient guest experience</li>
+          <li>Enforced safety rules and monitored activities to reduce risk and handle incidents</li>
+          <li>Assisted with staff training, scheduling, and customer service issues</li>
+          <li>Maintained cleanliness and organization of facilities and equipment</li>
+        </ul>
+      </div>
+
+      <!-- Ruby Tuesday -->
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">Ruby Tuesday</span>
+          <span class="dates">Mar. 2018 – Jun. 2020</span>
+        </div>
+        <div class="job-meta">
+          <span>Server / Grill Cook</span>
+          <span class="location">Pueblo, CO</span>
+        </div>
+        <ul class="bullets">
+          <li>Delivered attentive customer service, taking orders and serving food efficiently</li>
+          <li>Prepared and cooked menu items on the grill, ensuring quality and food safety standards</li>
+          <li>Managed multiple responsibilities during busy shifts to maintain speed and accuracy</li>
+          <li>Maintained cleanliness of dining and kitchen areas while supporting team operations</li>
+        </ul>
+      </div>
+
+      <!-- Dunkin' -->
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">Dunkin' Donuts</span>
+          <span class="dates">Feb. 2015 – Feb. 2018</span>
+        </div>
+        <div class="job-meta">
+          <span>Crew / Shift Manager / Store Manager</span>
+          <span class="location">New Hartford, NY</span>
+        </div>
+        <ul class="bullets">
+          <li>Managed daily store operations including staff scheduling, inventory, and cash handling</li>
+          <li>Supervised and trained team members to ensure fast, friendly, and accurate service</li>
+          <li>Maintained food safety, cleanliness, and brand standards across all shifts</li>
+          <li>Monitored sales performance and controlled costs to meet business goals</li>
+        </ul>
+      </div>
+
+      <!-- Kmart / Fort End -->
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">Kmart</span>
+          <span class="dates">Jun. 2013 – Jan. 2015</span>
+        </div>
+        <div class="job-meta">
+          <span>Front End Supervisor</span>
+          <span class="location">Herkimer, NY</span>
+        </div>
+        <ul class="bullets">
+          <li>Supervised front-end operations, including cashiers and customer service</li>
+          <li>Handled cash management, returns, and resolved customer issues efficiently</li>
+          <li>Trained staff on POS systems, store policies, and service standards</li>
+          <li>Maintained organized checkout areas and ensured smooth, accurate transactions</li>
+        </ul>
+      </div>
+
+      <!-- NYS DEC -->
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">NYS Department of Environmental Conservation</span>
+          <span class="dates">Jan. 2011 – Jan. 2012</span>
+        </div>
+        <div class="job-meta">
+          <span>Administrative Assistant (Temp)</span>
+          <span class="location">New York State</span>
+        </div>
+        <ul class="bullets">
+          <li>Provided administrative support to department staff in a government agency setting</li>
+          <li>Managed scheduling, correspondence, and filing systems to keep office operations running smoothly</li>
+          <li>Assisted with data entry, document preparation, and record keeping</li>
+          <li>Handled phone and in-person inquiries, directing them to appropriate personnel</li>
+        </ul>
+      </div>
+
+    </section>
+
+    <!-- Education -->
+    <section>
+      <div class="section-title">Education</div>
+
+      <div class="edu">
+        <div class="edu-header">
+          <span class="school">Herkimer College</span>
+          <span class="dates">Est. Grad Sept. 2027</span>
+        </div>
+        <div class="edu-meta">
+          <span>B.A. Business Administration</span>
+          <span class="location">Herkimer, NY</span>
+        </div>
+        <ul class="bullets">
+          <li>GPA: 3.4 / 4.0 — Currently disenrolled while focusing on Medical Assistant coursework</li>
+        </ul>
+      </div>
+
+      <div class="edu">
+        <div class="edu-header">
+          <span class="school">MedCerts Guild Program</span>
+          <span class="dates">Est. Grad Oct. 2026</span>
+        </div>
+        <div class="edu-meta">
+          <span>Medical Assistant</span>
+          <span class="location">Remote</span>
+        </div>
+        <ul class="bullets">
+          <li>GPA: 3.9 / 4.0 — Currently enrolled, 51.5% complete</li>
+          <li>Enrolled through Guild Ascend Program with UCHealth</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Military -->
+    <section>
+      <div class="section-title">Military</div>
+      <div class="job">
+        <div class="job-header">
+          <span class="employer">US Army – E5 SGT</span>
+          <span class="dates">2012 – 2014</span>
+        </div>
+        <div class="job-meta">
+          <span>74D – Chemical, Biological, Radiological, Nuclear Specialist</span>
+          <span class="location">Herkimer, NY</span>
+        </div>
+        <ul class="bullets">
+          <li>Conducted detection, monitoring, and decontamination operations for CBRN threats</li>
+          <li>Operated and maintained specialized detection and protective equipment in high-risk environments</li>
+          <li>Trained personnel on CBRN defense procedures, safety protocols, and emergency response</li>
+          <li>Supported unit readiness through hazard assessments, reporting, and mission-oriented drills</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Certifications, Skills & Interests -->
+    <section>
+      <div class="section-title">Certifications, Skills &amp; Interests</div>
+      <div class="skills-list">
+        <p><strong>Certifications:</strong> BLS, ServSafe Restaurant Manager, Colorado Bartending License</p>
+        <p><strong>Skills:</strong> Customer service, team leadership, staff training, fast-paced operations, cash handling, POS systems, food safety, sanitation, inventory control, multitasking, communication, problem-solving</p>
+        <p><strong>Interests:</strong> Leadership, team development, operations, efficiency improvement, fast-paced environments, safety, emergency response, teamwork, structured work environments</p>
+      </div>
+    </section>
+
+  </article>
+
+</body>
+</html>
