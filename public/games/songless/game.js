@@ -440,7 +440,12 @@ function render() {
       st.className   = 'result-status lost';
     }
     document.getElementById('resultSong').innerHTML =
-      `<strong>${esc(s.title)}</strong><span>${esc(s.artist)}</span>`;
+      `<div class="result-song-row">
+         <a class="song-yt-btn" href="https://www.youtube.com/results?search_query=${encodeURIComponent(s.title + ' ' + s.artist)}" target="_blank" rel="noopener" title="Listen on YouTube">
+           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+         </a>
+         <div class="song-info"><strong>${esc(s.title)}</strong><span>${esc(s.artist)}</span></div>
+       </div>`;
     document.getElementById('resultEmoji').textContent = emojiRow(g);
     document.getElementById('nextBtn').style.display = state.slot < DAILY_COUNT - 1 ? '' : 'none';
   } else {
@@ -456,10 +461,17 @@ function render() {
       `${wonCount}/${DAILY_COUNT} <span>songs guessed</span>`;
     document.getElementById('allDoneRows').innerHTML = state.games.map((gm, i) => {
       const song = SONGS_TODAY[i];
+      const ytHref = `https://www.youtube.com/results?search_query=${encodeURIComponent(song.title + ' ' + song.artist)}`;
       return `<div class="all-done-row">
-        <span class="song-name">${esc(song.title)}</span>
+        <a class="song-yt-btn" href="${ytHref}" target="_blank" rel="noopener" title="Listen on YouTube">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </a>
+        <div class="song-info">
+          <span class="song-name">${esc(song.title)}</span>
+          <span class="song-artist">${esc(song.artist)}</span>
+        </div>
         <span class="row-emoji">${emojiRow(gm)}</span>
-        <span>${guessCount(gm)}/${MAX_GUESSES}</span>
+        <span class="row-count">${guessCount(gm)}/${MAX_GUESSES}</span>
       </div>`;
     }).join('');
     document.getElementById('nextLabel').textContent = `Next songs in ${nextIn()}`;
