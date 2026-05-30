@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Songless — Daily Music Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="page">
+  <header>
+    <a href="/public/games/" class="back-link">← Games</a>
+    <h1>Songless</h1>
+    <p class="subtitle">Guess today's 5 songs · 6 tries each</p>
+  </header>
+
+  <p class="msg" id="loading">Loading today's songs…</p>
+  <p class="msg error" id="error" style="display:none"></p>
+
+  <div id="game">
+    <div class="song-progress" id="songProgress"></div>
+    <div class="indicators"    id="indicators"></div>
+
+    <div class="player">
+      <button class="play-btn" id="playBtn" aria-label="Play clip" disabled>
+        <svg id="iconPlay"  viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      </button>
+      <div class="player-right">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="clip-label" id="clipLabel">Loading…</div>
+      </div>
+    </div>
+
+    <div class="guesses" id="guessList"></div>
+
+    <div id="inputArea">
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" type="text"
+               placeholder="Search for a song or artist…" autocomplete="off" spellcheck="false" />
+        <div class="dropdown" id="dropdown"></div>
+      </div>
+      <div class="buttons">
+        <button class="btn btn-skip"  id="skipBtn">Skip</button>
+        <button class="btn btn-guess" id="guessBtn" disabled>Guess</button>
+      </div>
+    </div>
+
+    <!-- Per-song result -->
+    <div class="result" id="result">
+      <div class="result-status" id="resultStatus"></div>
+      <div class="result-song"   id="resultSong"></div>
+      <div class="result-emoji"  id="resultEmoji"></div>
+      <div class="result-actions">
+        <button class="btn-sm btn-share" id="shareBtn">Copy result</button>
+        <button class="btn-sm btn-next"  id="nextBtn" style="display:none">Next Song →</button>
+      </div>
+    </div>
+
+    <!-- All-done card -->
+    <div class="all-done" id="allDone">
+      <div class="all-done-title">All done!</div>
+      <div class="all-done-score" id="allDoneScore"></div>
+      <div class="all-done-rows"  id="allDoneRows"></div>
+      <div class="result-actions">
+        <button class="btn-sm btn-share" id="shareAllBtn">Copy all results</button>
+      </div>
+      <p class="next-label" id="nextLabel"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Stats popup modal -->
+<div class="stats-modal" id="statsModal">
+  <div class="stats-modal-box">
+    <button class="stats-close" id="statsClose" aria-label="Close">✕</button>
+    <div class="stats-modal-title">Guess Distribution</div>
+    <div class="stats-modal-subtitle" id="statsModalSub">Loading…</div>
+    <div id="statsBars"></div>
+    <div class="stats-total" id="statsTotal"></div>
+  </div>
+</div>
+
+<!-- Debug bar (visible when ?debug in URL) -->
+<div class="debug-bar" id="debugBar">
+  <span class="debug-label">Debug</span>
+  <button class="btn-debug" id="debugReset">Reset today</button>
+  <button class="btn-debug" id="debugShuffle">Shuffle songs</button>
+  <button class="btn-debug" id="debugClearStats">Clear stats</button>
+</div>
+
+<script src="songs.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
