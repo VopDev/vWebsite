@@ -65,25 +65,29 @@ function renderMessage(text) {
   }).join(' ');
 }
 
-const TODAY     = todayStr();
-const STORE_KEY = `chatter-quiz-${TODAY}`;
+const TODAY = todayStr();
 
-let questions    = [];
-let emotes       = {};
-let current      = 0;
-let log          = [];
-let questionStart = 0; // timestamp when current question was shown
+let questions     = [];
+let emotes        = {};
+let current       = 0;
+let log           = [];
+let questionStart = 0;
 
-function loadState() {
+function save() {
+  fetch('/api/chatter-quiz/state', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: TODAY, state: { current, log } }),
+  }).catch(() => {});
+}
+
+async function loadState() {
   try {
-    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    const res = await fetch(`/api/chatter-quiz/state?date=${TODAY}`);
+    const s   = await res.json();
     if (s && Array.isArray(s.log)) { log = s.log; current = s.current ?? log.length; return true; }
   } catch {}
   return false;
-}
-
-function saveState() {
-  localStorage.setItem(STORE_KEY, JSON.stringify({ current, log }));
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -140,12 +144,12 @@ function handleAnswer(selectedUsername) {
 
   const elapsed = Date.now() - questionStart;
   log.push({ correct, display: answer.display, text: q.text });
-  saveState();
+  save();
   checkAchievements(correct, elapsed);
 
   setTimeout(() => {
     current++;
-    saveState();
+    save();
     if (current >= questions.length) showResults();
     else renderQuestion();
   }, 1400);
@@ -207,7 +211,7 @@ async function init() {
   }
 
   document.getElementById('loading').style.display = 'none';
-  loadState();
+  await loadState();
 
   if (current >= questions.length) {
     document.getElementById('game').style.display = 'none';
