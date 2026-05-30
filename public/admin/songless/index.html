@@ -89,7 +89,15 @@
     <h1>Songless Admin</h1>
   </header>
 
-  <!-- Date picker -->
+  <!-- Mode + Date picker -->
+  <section>
+    <h2>Mode</h2>
+    <div class="date-tabs">
+      <button class="date-tab active" id="modeNormal" data-mode="normal">Normal</button>
+      <button class="date-tab"        id="modeHard"   data-mode="hard">Hard</button>
+    </div>
+  </section>
+
   <section>
     <h2>Day</h2>
     <div class="date-tabs" id="dateTabs">Loading…</div>
@@ -145,8 +153,9 @@
     return () => { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (s >>> 0) / 0x100000000; };
   }
 
-  function getSongsForDate(dateStr, seedOffset = 0) {
-    const rand    = seededRand(dayIndex(dateStr) * 1000 + seedOffset + 1);
+  function getSongsForDate(dateStr, seedOffset = 0, isHard = false) {
+    const modeOffset = isHard ? 999983 : 0;
+    const rand    = seededRand(dayIndex(dateStr) * 1000 + seedOffset + modeOffset + 1);
     const indices = Array.from({ length: SONGS.length }, (_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
       const j = Math.floor(rand() * (i + 1));
@@ -162,6 +171,7 @@
 
   const TODAY = todayStr();
   let selectedDate = TODAY;
+  let selectedMode = 'normal';
   let datesIndex = [];
 
   function setMsg(text, type = '') {
@@ -172,7 +182,7 @@
   }
 
   function renderSongs(dateStr, seedOffset) {
-    const songs = getSongsForDate(dateStr, seedOffset);
+    const songs = getSongsForDate(dateStr, seedOffset, selectedMode === 'hard');
     document.getElementById('selectedDate').textContent = dateStr + (seedOffset ? ` (shuffle #${seedOffset})` : '');
     document.getElementById('songList').innerHTML = songs.map((s, i) =>
       `<div class="song-row">
@@ -187,7 +197,7 @@
   async function loadAnalytics(dateStr) {
     document.getElementById('analyticsView').innerHTML = '<p class="msg">Loading…</p>';
     try {
-      const { players, slots } = await fetch(`/admin/api/analytics?date=${dateStr}`).then(r => r.json());
+      const { players, slots } = await fetch(`/admin/api/analytics?date=${dateStr}&mode=${selectedMode}`).then(r => r.json());
 
       const completions  = slots[4]?.total ?? 0;
       const dropoff      = [players, ...slots.map(s => s.total ?? 0)];
@@ -236,10 +246,10 @@
   async function loadStats(dateStr) {
     document.getElementById('statsView').innerHTML = '<p class="msg">Loading…</p>';
     const entry = datesIndex.find(d => d.date === dateStr);
-    const songs  = getSongsForDate(dateStr, entry?.seedOffset ?? 0);
+    const songs  = getSongsForDate(dateStr, entry?.seedOffset ?? 0, selectedMode === 'hard');
 
     const slots = await Promise.all(
-      songs.map((_, i) => fetch(`/api/songless/stats?date=${dateStr}&slot=${i}`).then(r => r.json()).catch(() => null))
+      songs.map((_, i) => fetch(`/api/songless/stats?date=${dateStr}&slot=${i}&mode=${selectedMode}`).then(r => r.json()).catch(() => null))
     );
     document.getElementById('statsView').innerHTML = slots.map((stats, i) => {
       if (!stats) return `<div class="stat-card"><div class="stat-title">Song ${i+1} — no data</div></div>`;
@@ -271,6 +281,17 @@
     loadAnalytics(dateStr);
     loadStats(dateStr);
   }
+
+  // Mode tabs
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedMode = btn.dataset.mode;
+      document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b === btn));
+      renderSongs(selectedDate, datesIndex.find(d => d.date === selectedDate)?.seedOffset ?? 0);
+      loadAnalytics(selectedDate);
+      loadStats(selectedDate);
+    });
+  });
 
   async function init() {
     // Load dates index (past days)
@@ -316,7 +337,8 @@
   document.getElementById('clearStatsBtn').addEventListener('click', async () => {
     if (!confirm(`Clear all stats for ${selectedDate}?`)) return;
     try {
-      await fetch(`/api/songless/stats?date=${selectedDate}`, { method: 'DELETE' });
+      await fetch(`/api/songless/stats?date=${selectedDate}&mode=${selectedMode}`, { method: 'DELETE' });
+      loadAnalytics(selectedDate);
       loadStats(selectedDate);
       setMsg('Stats cleared.', 'ok');
     } catch { setMsg('Failed.', 'err'); }

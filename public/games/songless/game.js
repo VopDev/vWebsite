@@ -25,7 +25,8 @@ function seededRand(seed) {
 }
 
 function getDailySongs(offset = 0) {
-  const rand    = seededRand(dayIndex() * 1000 + offset + 1);
+  const modeOffset = hardMode ? 999983 : 0;
+  const rand    = seededRand(dayIndex() * 1000 + offset + modeOffset + 1);
   const indices = Array.from({ length: SONGS.length }, (_, i) => i);
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
@@ -71,6 +72,7 @@ let resultAudio     = null;
 let resultAudioSlot = -1;
 
 let hardMode         = localStorage.getItem('songless-hard') === '1';
+const MODE           = hardMode ? 'hard' : 'normal';
 let hardTimerInterval = null;
 let hardTimeLeft      = 30;
 
@@ -84,13 +86,13 @@ function save() {
   fetch('/api/songless/state', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ date: TODAY, state }),
+    body: JSON.stringify({ date: TODAY, state, mode: MODE }),
   }).catch(() => {});
 }
 
 async function load() {
   try {
-    const res = await fetch(`/api/songless/state?date=${TODAY}`);
+    const res = await fetch(`/api/songless/state?date=${TODAY}&mode=${MODE}`);
     const s   = await res.json();
     if (s && Array.isArray(s.games) && s.games.length === DAILY_COUNT) {
       state = s;
@@ -245,7 +247,7 @@ async function submitThenFetch(slot, game) {
       await fetch('/api/songless/result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: TODAY, slot, guessCount: game.guesses.length, won: game.won }),
+        body: JSON.stringify({ date: TODAY, slot, guessCount: game.guesses.length, won: game.won, mode: MODE }),
       });
       state.submitted[slot] = true;
       save();
@@ -253,7 +255,7 @@ async function submitThenFetch(slot, game) {
   }
 
   try {
-    const res = await fetch(`/api/songless/stats?date=${TODAY}&slot=${slot}`);
+    const res = await fetch(`/api/songless/stats?date=${TODAY}&slot=${slot}&mode=${MODE}`);
     const data = await res.json();
     statsCache[slot] = data;
     return data;

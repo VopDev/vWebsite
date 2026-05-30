@@ -10,18 +10,20 @@ function cookieHeader(sid) {
 }
 
 export async function onRequestGet({ request, env }) {
-  const date = new URL(request.url).searchParams.get('date');
+  const url  = new URL(request.url);
+  const date = url.searchParams.get('date');
+  const mode = url.searchParams.get('mode') || 'normal';
   if (!date) return new Response('Bad request', { status: 400 });
 
   const sid = getSid(request);
   if (!sid) return Response.json(null);
 
-  const data = await env.SONGLESS_KV.get(`state-${sid}-${date}`, 'json');
+  const data = await env.SONGLESS_KV.get(`state-${sid}-${date}-${mode}`, 'json');
   return Response.json(data);
 }
 
 export async function onRequestPost({ request, env }) {
-  const { date, state } = await request.json();
+  const { date, state, mode = 'normal' } = await request.json();
   if (!date || !state) return new Response('Bad request', { status: 400 });
 
   let sid = getSid(request);
@@ -31,13 +33,12 @@ export async function onRequestPost({ request, env }) {
     sid = crypto.randomUUID();
     headers['Set-Cookie'] = cookieHeader(sid);
 
-    // Count this as a new unique player for the day
     const pk    = `players-${date}`;
     const count = parseInt(await env.SONGLESS_KV.get(pk) || '0', 10);
     await env.SONGLESS_KV.put(pk, String(count + 1));
   }
 
-  await env.SONGLESS_KV.put(`state-${sid}-${date}`, JSON.stringify(state), {
+  await env.SONGLESS_KV.put(`state-${sid}-${date}-${mode}`, JSON.stringify(state), {
     expirationTtl: TTL,
   });
 
@@ -48,9 +49,19 @@ export async function onRequestDelete({ request, env }) {
   const sid = getSid(request);
   if (!sid) return new Response('OK', { status: 200 });
 
-  const date = new URL(request.url).searchParams.get('date');
+  const url  = new URL(request.url);
+  const date = url.searchParams.get('date');
+  const mode = url.searchParams.get('mode');
   if (!date) return new Response('Bad request', { status: 400 });
 
-  await env.SONGLESS_KV.delete(`state-${sid}-${date}`);
+  if (mode) {
+    await env.SONGLESS_KV.delete(`state-${sid}-${date}-${mode}`);
+  } else {
+    await Promise.all([
+      env.SONGLESS_KV.delete(`state-${sid}-${date}-normal`),
+      env.SONGLESS_KV.delete(`state-${sid}-${date}-hard`),
+    ]);
+  }
+
   return new Response('OK', { status: 200 });
 }
