@@ -1,18 +1,27 @@
-const CHANNEL   = 'xqcow';
+const CHANNEL   = 'xqc';
 const QUESTIONS = 5;
 
 const CHATTERS = [
-  { username: 'nymn_tv',       display: 'NymN' },
-  { username: 'crazyslick',    display: 'CrazySlick' },
-  { username: 'adeptthebest',  display: 'Adept' },
-  { username: 'trainwreckstv', display: 'Train' },
-  { username: 'poke',          display: 'Poke' },
-  { username: 'nmplol',        display: 'nmplol' },
-  { username: 'mizkif',        display: 'Mizkif' },
-  { username: 'buddha',        display: 'Buddha' },
-  { username: 'jynxzi',        display: 'Jynxzi' },
-  { username: 'moistcr1tikal', display: 'Charlie' },
-];
+  'nymn_tv',
+  'crazyslick',
+  'trainwreckstv',
+  'poke',
+  'nmplol',
+  'mizkif',
+  'buddha',
+  'jynxzi',
+  'moistcr1tikal',
+  'jessesmfi',
+  'pokelawls',
+  'mightyoaks',
+  'zostradamus',
+  'cent',
+  'idini',
+  'mdpog',
+  'omie',
+  'arthium',
+  'scorpyl2',
+].map(u => ({ username: u, display: u }));
 
 function todayStr() {
   const n = new Date();
