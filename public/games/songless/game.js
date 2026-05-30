@@ -308,9 +308,9 @@ function renderHints(song, game) {
 
   const defs = [
     { label: 'Year',   value: song.year ? String(song.year) : '—' },
-    { label: 'Artist', value: `Starts with "${artistLetter}"` },
+    { label: 'Artist', value: `"${artistLetter}…"` },
     { label: 'Title',  value: `${wordCount} word${wordCount !== 1 ? 's' : ''}` },
-    { label: 'Title',  value: `Starts with "${titleLetter}"` },
+    { label: 'Title',  value: `"${titleLetter}…"` },
   ];
 
   const visible = defs.slice(0, Math.min(count - 1, defs.length));
