@@ -1,6 +1,6 @@
 const CHANNEL   = 'xqc';
 const XQC_ID    = '71092938'; // xQc's Twitch user ID
-const QUESTIONS = 5;
+const QUESTIONS = 10;
 
 const CHATTERS = [
   // Core regulars

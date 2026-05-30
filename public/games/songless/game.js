@@ -387,15 +387,51 @@ function showAchievementToast(id) {
   }, 4000);
 }
 
-function checkAchievements(game) {
+function checkAchievements(game, slot) {
+  // Completionist: all 5 attempted (win or lose)
+  if (state.games.every(g => g.over)) unlockAchievement('songless_full_day');
+
   if (!game.won) return;
+
   unlockAchievement('songless_first');
-  if (game.guesses.length === 1)                    unlockAchievement('songless_perfect');
-  if (!game.guesses.some(g => g.skipped))           unlockAchievement('songless_no_skip');
-  if (hardMode)                                      unlockAchievement('songless_hard_win');
-  if (hardMode && game.guesses.length === 1)         unlockAchievement('songless_hard_first');
-  if (hardMode && hardTimeLeft >= 15)                unlockAchievement('songless_beat_clock');
-  if (state.games.every(g => g.over && g.won))       unlockAchievement('songless_sweep');
+  if (game.guesses.length === 1)          unlockAchievement('songless_perfect');
+  if (game.guesses.length <= 2)           unlockAchievement('songless_quick');
+  if (game.guesses.length === MAX_GUESSES)unlockAchievement('songless_clutch');
+  if (!game.guesses.some(g => g.skipped)) unlockAchievement('songless_no_skip');
+  if (hardMode)                           unlockAchievement('songless_hard_win');
+  if (hardMode && game.guesses.length === 1)  unlockAchievement('songless_hard_first');
+  if (hardMode && hardTimeLeft >= 15)         unlockAchievement('songless_beat_clock');
+  if (hardMode && hardTimeLeft <= 5)          unlockAchievement('songless_hard_clutch');
+  if (slot === 0)                             unlockAchievement('songless_early_bird');
+
+  // Won after 4+ wrong guesses
+  const wrongCount = game.guesses.filter(g => !g.correct && !g.skipped).length;
+  if (wrongCount >= 4) unlockAchievement('songless_comeback');
+
+  const wonGames = state.games.filter(g => g.over && g.won);
+  if (wonGames.every(g => g.won) && wonGames.length >= 1) {
+    // Hat Trick: 3 in a row
+    let streak = 0;
+    for (const g of state.games) {
+      if (g.over && g.won) streak++; else if (g.over) streak = 0;
+    }
+    if (streak >= 3) unlockAchievement('songless_3_streak');
+  }
+
+  // 2x Perfect: 2 songs guessed on clip 1
+  const perfectCount = state.games.filter(g => g.over && g.won && g.guesses.length === 1).length;
+  if (perfectCount >= 2) unlockAchievement('songless_2x_perfect');
+
+  if (state.games.every(g => g.over && g.won)) {
+    unlockAchievement('songless_sweep');
+    if (hardMode) unlockAchievement('songless_hard_sweep');
+  }
+
+  // No skips across all completed songs
+  const allOver = state.games.filter(g => g.over);
+  if (allOver.length === DAILY_COUNT && allOver.every(g => !g.guesses.some(gs => gs.skipped))) {
+    unlockAchievement('songless_no_skip_day');
+  }
 }
 
 // ── Result preview ────────────────────────────────────────────────────────────
@@ -489,7 +525,7 @@ function makeGuess(song, skipped) {
 
   if (g.over) {
     stopHardTimer();
-    checkAchievements(g);
+    checkAchievements(g, state.slot);
     clearTimeout(statsModalTimer);
     statsModalTimer = setTimeout(() => openStatsModal(state.slot, g), 650);
   }

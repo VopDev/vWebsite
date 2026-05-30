@@ -25,37 +25,61 @@
     h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
     .subtitle { color: var(--muted); font-size: 0.875rem; margin-top: 0.5rem; }
 
-    .section-label {
-      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem;
-    }
+    /* Collapsible game section */
+    .game-section { display: flex; flex-direction: column; }
 
-    .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
+    .game-header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.25rem; cursor: pointer; user-select: none;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; transition: border-color 0.15s, background 0.15s;
+    }
+    .game-header:hover { border-color: var(--border2); background: var(--surface2); }
+    .game-header.open { border-radius: 12px 12px 0 0; border-bottom-color: transparent; }
+
+    .game-header-left { flex: 1; display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+    .game-name {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text);
+    }
+    .game-progress-row { display: flex; align-items: center; gap: 0.6rem; }
+    .game-count { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+    .game-count strong { color: var(--text); }
+    .progress-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.4s ease; }
+
+    .chevron {
+      width: 18px; height: 18px; flex-shrink: 0; color: var(--muted);
+      transition: transform 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .game-header.open .chevron { transform: rotate(180deg); }
+
+    /* Achievement grid (hidden until expanded) */
+    .ach-body {
+      display: none; padding: 0.75rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-top: none; border-radius: 0 0 12px 12px;
+    }
+    .ach-body.open { display: block; }
+
+    .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem; }
 
     .ach-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.1rem 1.25rem;
-      display: flex; align-items: flex-start; gap: 1rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      display: flex; align-items: flex-start; gap: 0.85rem;
       transition: border-color 0.15s;
     }
     .ach-card.unlocked { border-color: var(--border2); }
-    .ach-card.locked   { opacity: 0.38; }
+    .ach-card.locked   { opacity: 0.35; }
 
-    .ach-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; filter: grayscale(0); }
+    .ach-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
     .ach-card.locked .ach-icon { filter: grayscale(1); }
 
-    .ach-body { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-    .ach-title { font-size: 0.9rem; font-weight: 700; }
-    .ach-desc  { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
-    .ach-date  { font-size: 0.65rem; color: var(--gold); margin-top: 0.2rem; }
-
-    .progress-bar {
-      height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 0.5rem;
-    }
-    .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.4s ease; }
-
-    .count-label { font-size: 0.72rem; color: var(--muted); }
-    .count-label strong { color: var(--text); }
+    .ach-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+    .ach-title { font-size: 0.85rem; font-weight: 700; }
+    .ach-desc  { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+    .ach-date  { font-size: 0.62rem; color: var(--gold); margin-top: 0.15rem; }
   </style>
 </head>
 <body>
@@ -66,7 +90,7 @@
     <p class="subtitle" id="progressLabel">Loading…</p>
   </header>
 
-  <div id="achSections"></div>
+  <div id="achSections" style="display:flex;flex-direction:column;gap:0.75rem"></div>
 </div>
 
 <script src="/games/achievements.js"></script>
@@ -76,37 +100,62 @@
     try { unlocked = await fetch('/api/achievements').then(r => r.json()); } catch {}
 
     const unlockedMap = Object.fromEntries(unlocked.map(a => [a.id, a]));
-    const total    = ALL_ACHIEVEMENTS.length;
-    const doneCount = unlocked.length;
+    const total     = ALL_ACHIEVEMENTS.length;
+    const doneCount = Object.keys(unlockedMap).length;
 
     document.getElementById('progressLabel').innerHTML =
       `<strong style="color:var(--text)">${doneCount}/${total}</strong> achievements unlocked`;
 
-    // Group by game
     const games = [...new Set(ALL_ACHIEVEMENTS.map(a => a.game))];
+
     document.getElementById('achSections').innerHTML = games.map(game => {
-      const achs = ALL_ACHIEVEMENTS.filter(a => a.game === game);
+      const achs     = ALL_ACHIEVEMENTS.filter(a => a.game === game);
       const gameDone = achs.filter(a => unlockedMap[a.id]).length;
-      return `<div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem">
-        <div>
-          <div class="section-label">${game}</div>
-          <div class="count-label"><strong>${gameDone}</strong>/${achs.length}</div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(gameDone/achs.length*100)}%"></div></div>
-        </div>
-        <div class="ach-grid">${achs.map(a => {
-          const entry = unlockedMap[a.id];
-          const dateStr = entry ? new Date(entry.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
-          return `<div class="ach-card ${entry ? 'unlocked' : 'locked'}">
-            <div class="ach-icon">${a.icon}</div>
-            <div class="ach-body">
-              <div class="ach-title">${a.title}</div>
-              <div class="ach-desc">${a.desc}</div>
-              ${dateStr ? `<div class="ach-date">Unlocked ${dateStr}</div>` : ''}
+      const pct      = Math.round(gameDone / achs.length * 100);
+      const id       = game.replace(/\W+/g, '_');
+
+      const cards = achs.map(a => {
+        const entry   = unlockedMap[a.id];
+        const dateStr = entry
+          ? new Date(entry.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+          : null;
+        return `<div class="ach-card ${entry ? 'unlocked' : 'locked'}">
+          <div class="ach-icon">${a.icon}</div>
+          <div class="ach-info">
+            <div class="ach-title">${a.title}</div>
+            <div class="ach-desc">${a.desc}</div>
+            ${dateStr ? `<div class="ach-date">Unlocked ${dateStr}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      return `<div class="game-section">
+        <div class="game-header" id="hdr-${id}" onclick="toggle('${id}')">
+          <div class="game-header-left">
+            <div class="game-name">${game}</div>
+            <div class="game-progress-row">
+              <div class="game-count"><strong>${gameDone}</strong>/${achs.length}</div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
             </div>
-          </div>`;
-        }).join('')}</div>
+          </div>
+          <div class="chevron">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ach-body" id="body-${id}">
+          <div class="ach-grid">${cards}</div>
+        </div>
       </div>`;
     }).join('');
+  }
+
+  function toggle(id) {
+    const hdr  = document.getElementById('hdr-'  + id);
+    const body = document.getElementById('body-' + id);
+    const open = body.classList.toggle('open');
+    hdr.classList.toggle('open', open);
   }
 
   init();

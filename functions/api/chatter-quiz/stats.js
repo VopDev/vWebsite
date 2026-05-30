@@ -8,7 +8,7 @@ function getSid(request) {
 function emptyStats() {
   return {
     totalAnswers: 0, correct: 0, wrong: 0, completions: 0,
-    perQuestion: Array(5).fill(null).map(() => ({ correct: 0, wrong: 0 })),
+    perQuestion: Array(10).fill(null).map(() => ({ correct: 0, wrong: 0 })),
   };
 }
 

@@ -38,20 +38,49 @@ function showAchievementToast(id) {
 }
 
 function checkAchievements(correct, elapsedMs) {
+  totalElapsed += elapsedMs;
+
   if (correct) {
     unlockAchievement('chatquiz_first');
-    if (elapsedMs <= 3000) unlockAchievement('chatquiz_fast');
+    if (elapsedMs <= 1000)  unlockAchievement('chatquiz_instant');
+    if (elapsedMs <= 3000)  unlockAchievement('chatquiz_fast');
+    if (elapsedMs >= 30000) unlockAchievement('chatquiz_deep_thinker');
 
     // Streak of 3
     const recent = log.slice(-2);
     if (recent.length === 2 && recent.every(a => a.correct)) unlockAchievement('chatquiz_streak');
+
+    // Bounce Back: correct after 2 wrong in a row
+    const prev2 = log.slice(-3, -1);
+    if (prev2.length === 2 && prev2.every(a => !a.correct)) unlockAchievement('chatquiz_comeback');
   }
 
-  // End-of-game checks (after last question)
+  // 3 wrong in a row
+  const last3 = log.slice(-3);
+  if (last3.length === 3 && last3.every(a => !a.correct)) unlockAchievement('chatquiz_3_wrong');
+
+  // Hot Start: first 5 all correct
+  if (log.length >= 5 && log.slice(0, 5).every(a => a.correct)) unlockAchievement('chatquiz_hot_start');
+
+  // End-of-game checks
   if (log.length === questions.length) {
-    if (log.every(a => a.correct)) {
+    const correctCount = log.filter(a => a.correct).length;
+    if (correctCount === questions.length) {
       unlockAchievement('chatquiz_perfect');
       unlockAchievement('chatquiz_no_miss');
+    }
+    if (correctCount === 0) unlockAchievement('chatquiz_clueless');
+    if (correctCount === questions.length - 1) unlockAchievement('chatquiz_scholar');
+    if (totalElapsed <= 30000) unlockAchievement('chatquiz_speed_run');
+
+    // Clutch: missed Q1, got last question right
+    if (!log[0].correct && log[log.length - 1].correct) unlockAchievement('chatquiz_clutch');
+
+    // Warm Up: missed Q1, then got 5 in a row correct
+    if (!log[0].correct) {
+      for (let i = 1; i <= log.length - 5; i++) {
+        if (log.slice(i, i + 5).every(a => a.correct)) { unlockAchievement('chatquiz_second_wind'); break; }
+      }
     }
   }
 }
@@ -72,6 +101,7 @@ let emotes        = {};
 let current       = 0;
 let log           = [];
 let questionStart = 0;
+let totalElapsed  = 0;
 
 function save() {
   fetch('/api/chatter-quiz/state', {
