@@ -1,6 +1,6 @@
 // SONGS is defined in songs.js, loaded before this file
 
-const CLIPS       = [1, 2, 4, 7, 11, 16];
+const CLIPS       = [0.1, 0.5, 1, 3, 8, 15];
 const MAX_GUESSES = 6;
 const DAILY_COUNT = 5;
 
@@ -16,11 +16,22 @@ function todayStr() {
   return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
 }
 
+function seededRand(seed) {
+  let s = ((seed || 1) ^ 0x9e3779b9) >>> 0 || 1;
+  return () => {
+    s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+    return (s >>> 0) / 0x100000000;
+  };
+}
+
 function getDailySongs(offset = 0) {
-  const base = dayIndex() * DAILY_COUNT + offset;
-  return Array.from({ length: DAILY_COUNT }, (_, i) =>
-    SONGS[((base + i) % SONGS.length + SONGS.length) % SONGS.length]
-  );
+  const rand    = seededRand(dayIndex() * 1000 + offset + 1);
+  const indices = Array.from({ length: SONGS.length }, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return indices.slice(0, DAILY_COUNT).map(i => SONGS[i]);
 }
 
 const TODAY           = todayStr();
@@ -266,6 +277,31 @@ function renderStatsBars(stats, game) {
   }));
 }
 
+// ── Hints ─────────────────────────────────────────────────────────────────────
+function renderHints(song, game) {
+  const el    = document.getElementById('hints');
+  const count = game.guesses.length;
+  if (count < 2) { el.innerHTML = ''; return; }
+
+  const wordCount = song.title.trim().split(/\s+/).length;
+  const artistLetter = song.artist.match(/[a-zA-Z0-9]/)?.[0].toUpperCase() ?? song.artist[0];
+  const titleLetter  = song.title.match(/[a-zA-Z0-9]/)?.[0].toUpperCase()  ?? song.title[0];
+
+  const defs = [
+    { label: 'Year',   value: song.year ? String(song.year) : '—' },
+    { label: 'Artist', value: `Starts with "${artistLetter}"` },
+    { label: 'Title',  value: `${wordCount} word${wordCount !== 1 ? 's' : ''}` },
+    { label: 'Title',  value: `Starts with "${titleLetter}"` },
+  ];
+
+  const visible = defs.slice(0, Math.min(count - 1, defs.length));
+  el.innerHTML = `<div class="hints-list">${
+    visible.map(h =>
+      `<div class="hint-chip"><span class="hint-label">${h.label}</span><span class="hint-value">${h.value}</span></div>`
+    ).join('')
+  }</div>`;
+}
+
 // ── Game logic ────────────────────────────────────────────────────────────────
 function makeGuess(song, skipped) {
   const g = curGame();
@@ -323,6 +359,9 @@ function render() {
   const g      = curGame();
   const s      = curSong();
   const allOver = state.games.every(gm => gm.over);
+
+  // Hints
+  renderHints(s, g);
 
   // Song progress dots
   document.getElementById('songProgress').innerHTML =

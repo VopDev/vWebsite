@@ -453,6 +453,42 @@ h1 {
 #game { display: none; flex-direction: column; gap: 1.25rem; }
 #game.visible { display: flex; }
 
+/* ── Hints ───────────────────────────────────────────────────────────────────── */
+#hints:empty { display: none; }
+
+.hints-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.hint-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  animation: hintIn 0.2s ease;
+}
+
+@keyframes hintIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hint-label {
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.hint-value { color: var(--text); font-weight: 500; }
+
 /* ── Debug bar ───────────────────────────────────────────────────────────────── */
 .debug-bar {
   display: none;
