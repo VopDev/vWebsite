@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Vopori</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+      --border: #222; --border2: #333; --text: #f0f0f0; --muted: #555;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; display: flex; justify-content: center;
+      padding: 3rem 1rem 5rem;
+    }
+    .page { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 2.5rem; }
+
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.8rem; letter-spacing: 0.05em; transition: color 0.15s; }
+    .back-link:hover { color: var(--text); }
+
+    h1 { font-size: 2rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 0.4rem; }
+
+    .section-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+    .admin-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .admin-card {
+      display: flex; align-items: center; gap: 1.25rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.25rem 1.5rem;
+      text-decoration: none; color: var(--text);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .admin-card:hover { border-color: var(--border2); background: var(--surface2); }
+
+    .admin-icon { font-size: 1.75rem; line-height: 1; flex-shrink: 0; }
+    .admin-body { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; }
+    .admin-name { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.05em; }
+    .admin-desc { font-size: 0.75rem; color: var(--muted); }
+    .admin-arrow { color: var(--muted); font-size: 1rem; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header style="display:flex;flex-direction:column;gap:0.3rem">
+    <a href="/games/" class="back-link">← Games</a>
+    <h1>Admin</h1>
+    <p class="subtitle">Manage games, view stats, and configure settings.</p>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:0.75rem">
+    <p class="section-label">Games</p>
+    <div class="admin-grid">
+      <a href="/admin/songless/" class="admin-card">
+        <div class="admin-icon">🎵</div>
+        <div class="admin-body">
+          <div class="admin-name">Songless</div>
+          <div class="admin-desc">Daily stats, song shuffling, analytics, date history</div>
+        </div>
+        <span class="admin-arrow">→</span>
+      </a>
+    </div>
+  </section>
+</div>
+</body>
+</html>

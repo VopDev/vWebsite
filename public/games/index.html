@@ -67,18 +67,33 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 1.5rem;
-      text-decoration: none;
       color: var(--text);
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
       transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      overflow: hidden;
     }
     .game-card:hover {
       border-color: var(--border2);
       background: var(--surface2);
       box-shadow: 0 0 20px rgba(255,255,255,0.04);
+    }
+    .game-card-link {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1.5rem 1.5rem 1rem;
+      text-decoration: none;
+      color: var(--text);
+      flex: 1;
+    }
+    a.game-card.game-card-link { padding: 1.5rem; }
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      border-top: 1px solid var(--border);
     }
 
     .game-icon { font-size: 2rem; line-height: 1; }
@@ -108,32 +123,24 @@
       align-self: flex-start;
     }
 
-    .settings { display: flex; flex-direction: column; gap: 0.5rem; }
-    .settings-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-
-    .setting-row {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 0.9rem 1.1rem; gap: 1rem;
+    .mode-toggle {
+      display: flex; align-items: center; gap: 0.5rem;
+      cursor: pointer; user-select: none;
     }
-    .setting-info { display: flex; flex-direction: column; gap: 0.15rem; }
-    .setting-name { font-size: 0.88rem; font-weight: 600; }
-    .setting-desc { font-size: 0.73rem; color: var(--muted); }
-
-    .toggle-switch { position: relative; flex-shrink: 0; cursor: pointer; }
-    .toggle-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .mode-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
     .toggle-track {
-      display: block; width: 44px; height: 26px; border-radius: 13px;
+      display: block; width: 36px; height: 20px; border-radius: 10px;
       background: #2a2a2a; border: 1px solid var(--border2);
-      transition: background 0.2s, border-color 0.2s; position: relative;
+      transition: background 0.2s, border-color 0.2s; position: relative; flex-shrink: 0;
     }
     .toggle-thumb {
-      position: absolute; top: 3px; left: 3px;
-      width: 18px; height: 18px; border-radius: 50%;
+      position: absolute; top: 2px; left: 2px;
+      width: 14px; height: 14px; border-radius: 50%;
       background: #555; transition: transform 0.2s, background 0.2s;
     }
-    .toggle-switch input:checked ~ .toggle-track { background: #166534; border-color: #22c55e; }
-    .toggle-switch input:checked ~ .toggle-track .toggle-thumb { transform: translateX(18px); background: #22c55e; }
+    .mode-toggle input:checked ~ .toggle-track { background: #166534; border-color: #22c55e; }
+    .mode-toggle input:checked ~ .toggle-track .toggle-thumb { transform: translateX(16px); background: #22c55e; }
+    .toggle-text { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -145,32 +152,27 @@
     </header>
 
     <div class="games-grid">
-      <a href="/games/songless/" class="game-card">
-        <div class="game-icon">🎵</div>
-        <h2>Songless</h2>
-        <p>Guess the song from a short audio clip. Six tries, each revealing a little more.</p>
-        <span class="badge">Daily</span>
-      </a>
-      <a href="/games/achievements/" class="game-card">
+      <div class="game-card">
+        <a href="/games/songless/" class="game-card-link">
+          <div class="game-icon">🎵</div>
+          <h2>Songless</h2>
+          <p>Guess the song from a short audio clip. Six tries, each revealing a little more.</p>
+        </a>
+        <div class="card-footer">
+          <span class="badge">Daily</span>
+          <label class="mode-toggle" id="hardModeLabel" title="Hard Mode: 30s timer, no hints">
+            <input type="checkbox" id="hardModeToggle">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-text">Hard</span>
+          </label>
+        </div>
+      </div>
+      <a href="/games/achievements/" class="game-card game-card-link">
         <div class="game-icon">🏆</div>
         <h2>Achievements</h2>
         <p>Track your progress across all games and unlock achievements.</p>
         <span class="badge">Cross-game</span>
       </a>
-    </div>
-
-    <div class="settings">
-      <p class="settings-label">Settings</p>
-      <div class="setting-row">
-        <div class="setting-info">
-          <span class="setting-name">Hard Mode</span>
-          <span class="setting-desc">30s timer per guess · no hints</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="hardModeToggle">
-          <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        </label>
-      </div>
     </div>
   </div>
 
@@ -180,6 +182,8 @@
     toggle.addEventListener('change', () => {
       localStorage.setItem('songless-hard', toggle.checked ? '1' : '0');
     });
+    // Prevent toggle click from triggering card navigation
+    document.getElementById('hardModeLabel').addEventListener('click', e => e.stopPropagation());
   </script>
 </body>
 </html>

@@ -317,7 +317,7 @@ function startHardTimer() {
     if (hardTimeLeft <= 0) {
       clearInterval(hardTimerInterval);
       hardTimerInterval = null;
-      makeGuess({ title: '', artist: '' }, true);
+      timeoutSong();
     }
   }, 1000);
 }
@@ -325,6 +325,18 @@ function startHardTimer() {
 function stopHardTimer() {
   clearInterval(hardTimerInterval);
   hardTimerInterval = null;
+}
+
+function timeoutSong() {
+  const g = curGame();
+  if (g.over) return;
+  g.over     = true;
+  g.won      = false;
+  g.timedOut = true;
+  save();
+  render();
+  clearTimeout(statsModalTimer);
+  statsModalTimer = setTimeout(() => openStatsModal(state.slot, g), 650);
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
@@ -464,8 +476,6 @@ function makeGuess(song, skipped) {
     checkAchievements(g);
     clearTimeout(statsModalTimer);
     statsModalTimer = setTimeout(() => openStatsModal(state.slot, g), 650);
-  } else if (hardMode) {
-    startHardTimer();
   }
 }
 
@@ -561,7 +571,7 @@ function render() {
       st.textContent = `Got it in ${g.guesses.length}${g.guesses.length === 1 ? ' try' : ' tries'}!`;
       st.className   = 'result-status won';
     } else {
-      st.textContent = 'Better luck next song!';
+      st.textContent = g.timedOut ? "Time's up!" : 'Better luck next song!';
       st.className   = 'result-status lost';
     }
     const art = artworks[state.slot];

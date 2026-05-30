@@ -85,7 +85,7 @@
 <body>
 <div class="page">
   <header style="display:flex;flex-direction:column;gap:0.4rem">
-    <a href="/games/songless/" class="back">← Back to game</a>
+    <a href="/admin/" class="back">← Admin</a>
     <h1>Songless Admin</h1>
   </header>
 
@@ -111,13 +111,13 @@
 
   <!-- Analytics for selected day -->
   <section>
-    <h2>Analytics</h2>
+    <h2>Analytics — <span id="analyticsMode">Normal</span></h2>
     <div id="analyticsView">—</div>
   </section>
 
   <!-- Stats for selected day -->
   <section>
-    <h2>Per-Song Stats</h2>
+    <h2>Per-Song Stats — <span id="statsMode">Normal</span></h2>
     <div id="statsView">—</div>
   </section>
 
@@ -286,6 +286,9 @@
   document.querySelectorAll('[data-mode]').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedMode = btn.dataset.mode;
+      const label = selectedMode === 'hard' ? 'Hard' : 'Normal';
+      document.getElementById('analyticsMode').textContent = label;
+      document.getElementById('statsMode').textContent = label;
       document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b === btn));
       renderSongs(selectedDate, datesIndex.find(d => d.date === selectedDate)?.seedOffset ?? 0);
       loadAnalytics(selectedDate);
