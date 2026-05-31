@@ -2,8 +2,8 @@ import { identify, applyIdentity } from './_identity.js';
 
 const TTL    = 60 * 60 * 24 * 120; // 120 days
 
-const PLAY_THRESHOLDS   = [1, 5, 10, 50];
-const STREAK_THRESHOLDS = [1, 5, 10, 50];
+const PLAY_THRESHOLDS   = [1, 3, 5, 10, 25, 50, 100];
+const STREAK_THRESHOLDS = [1, 3, 5, 7, 10, 25, 50, 100];
 const ALL_GAMES         = ['songquiz', 'chatter-quiz', 'words', 'spelling-bee'];
 
 function qualifiedIds(stats) {
@@ -12,8 +12,10 @@ function qualifiedIds(stats) {
   for (const t of STREAK_THRESHOLDS) if ((stats.streak     || 0) >= t) ids.push(`global_streak_${t}`);
   const played = stats.played || [];
   const lost   = stats.lost   || [];
+  const won    = stats.won    || [];
   if (ALL_GAMES.every(g => played.includes(g))) ids.push('global_all_games');
   if (ALL_GAMES.every(g => lost.includes(g)))   ids.push('global_all_losses');
+  if (ALL_GAMES.every(g => won.includes(g)))    ids.push('global_all_wins');
   return ids;
 }
 
@@ -56,6 +58,8 @@ export async function onRequestPost({ request, env }) {
     if (!stats.played.includes(game)) stats.played.push(game);
     stats.lost = stats.lost || [];
     if (lost && !stats.lost.includes(game)) stats.lost.push(game);
+    stats.won = stats.won || [];
+    if (!lost && !stats.won.includes(game)) stats.won.push(game);
 
     // Streak — consecutive distinct days with at least one completion
     if (!stats.lastPlayDate) {

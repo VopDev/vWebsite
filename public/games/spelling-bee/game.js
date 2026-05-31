@@ -57,18 +57,25 @@ function checkAchievements() {
   if (correctCount === total - 1) earn.push('spelling_scholar');
   if (correctCount === total)     earn.push('spelling_perfect');
   if (correctCount === 0)         earn.push('spelling_clueless');
+  if (correctCount >= 3)          earn.push('spelling_quarter');
 
   const easy = questions.filter(q => q.difficulty === 'easy');
   if (easy.length && easy.every(q => q.correct)) earn.push('spelling_easy_sweep');
+  const medium = questions.filter(q => q.difficulty === 'medium');
+  if (medium.length && medium.every(q => q.correct)) earn.push('spelling_medium_sweep');
   const hard = questions.filter(q => q.difficulty === 'hard');
   if (hard.length && hard.every(q => q.correct)) earn.push('spelling_hard_sweep');
   const imp = questions.find(q => q.difficulty === 'impossible');
   if (imp && imp.correct) earn.push('spelling_impossible');
+  const nightmare = questions.find(q => q.difficulty === 'hard_impossible');
+  if (nightmare && nightmare.correct) earn.push('spelling_nightmare');
 
   let streak = 0, maxStreak = 0;
   for (const q of questions) { if (q.correct) { streak++; maxStreak = Math.max(maxStreak, streak); } else streak = 0; }
   if (maxStreak >= 5) earn.push('spelling_streak_5');
   if (questions.slice(0, 5).every(q => q.correct)) earn.push('spelling_hot_start');
+  if (questions[0] && !questions[0].correct && questions[total - 1] && questions[total - 1].correct) earn.push('spelling_clutch');
+  if (questions[0] && !questions[0].correct && maxStreak >= 5) earn.push('spelling_comeback');
 
   const lost = correctCount < total;
   recordGlobalCompletion('spelling-bee', TODAY, MODE, lost).then(globalIds => {

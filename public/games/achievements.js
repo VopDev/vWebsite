@@ -10,6 +10,14 @@
   { id: 'global_streak_50', game: 'Global', icon: '💎', title: 'Devoted',         desc: 'Play 50 days in a row' },
   { id: 'global_all_games', game: 'Global', icon: '🌐', title: 'Jack of All',     desc: 'Play every game at least once' },
   { id: 'global_all_losses',game: 'Global', icon: '💀', title: 'Rough Week',      desc: 'Lose every game at least once' },
+  { id: 'global_play_3',    game: 'Global', icon: '🎮', title: 'Warming Up',      desc: 'Complete 3 games total' },
+  { id: 'global_play_25',   game: 'Global', icon: '🎰', title: 'Committed',       desc: 'Complete 25 games total' },
+  { id: 'global_play_100',  game: 'Global', icon: '🏛️', title: 'Centurion',       desc: 'Complete 100 games total' },
+  { id: 'global_streak_3',  game: 'Global', icon: '📈', title: 'Building a Habit', desc: 'Play 3 days in a row' },
+  { id: 'global_streak_7',  game: 'Global', icon: '🗓️', title: 'Full Week',       desc: 'Play 7 days in a row' },
+  { id: 'global_streak_25', game: 'Global', icon: '🌟', title: 'Relentless',      desc: 'Play 25 days in a row' },
+  { id: 'global_streak_100',game: 'Global', icon: '👑', title: 'Immortal',        desc: 'Play 100 days in a row' },
+  { id: 'global_all_wins',  game: 'Global', icon: '🏅', title: 'Clean Sweep',     desc: 'Win every game at least once' },
 
   // ── SongQuiz ──────────────────────────────────────────────────────────────
   { id: 'songless_first',      game: 'SongQuiz', icon: '🎵', title: 'First Note',      desc: 'Win your first SongQuiz song' },
@@ -29,6 +37,10 @@
   { id: 'songless_2x_perfect', game: 'SongQuiz', icon: '🎯', title: 'Audiophile',       desc: 'Guess 2 different songs on the first clip in one day' },
   { id: 'songless_hard_clutch',game: 'SongQuiz', icon: '⏰', title: 'Photo Finish',     desc: 'Win a song in Hard Mode with 5 or fewer seconds left' },
   { id: 'songless_full_day',   game: 'SongQuiz', icon: '✅', title: 'Completionist',    desc: 'Attempt all 5 songs in a single day' },
+  { id: 'songless_3x_perfect', game: 'SongQuiz', icon: '🎯', title: 'Golden Ears',       desc: 'Guess 3 songs on the very first clip in one day' },
+  { id: 'songless_hard_streak',game: 'SongQuiz', icon: '🔥', title: 'Hard Hat Trick',    desc: 'Win 3 Hard Mode songs in a row' },
+  { id: 'songless_clean',      game: 'SongQuiz', icon: '✨', title: 'Flawless',          desc: 'Win a song with no wrong guesses' },
+  { id: 'songless_no_skip_hard',game:'SongQuiz', icon: '🤐', title: 'Hard Purist',       desc: 'Win a Hard Mode song without skipping' },
 
   // ── xQc Chatter Quiz ─────────────────────────────────────────────────────
   { id: 'chatquiz_first',       game: 'xQc Chatter Quiz', icon: '💬', title: 'Chat Regular',    desc: 'Get your first Chatter Quiz question correct' },
@@ -47,6 +59,10 @@
   { id: 'chatquiz_scholar',     game: 'xQc Chatter Quiz', icon: '📚', title: 'Scholar',         desc: 'Finish with 9 out of 10 correct' },
   { id: 'chatquiz_hot_start',   game: 'xQc Chatter Quiz', icon: '🚀', title: 'Hot Start',       desc: 'Get the first 5 questions correct in a row' },
   { id: 'chatquiz_no_hints',    game: 'xQc Chatter Quiz', icon: '🧠', title: 'Pure Instinct',   desc: 'Complete a full quiz without using any hints' },
+  { id: 'chatquiz_half',        game: 'xQc Chatter Quiz', icon: '📊', title: 'Half Chatter',    desc: 'Finish a quiz with 5 or more correct' },
+  { id: 'chatquiz_flawless_speed', game: 'xQc Chatter Quiz', icon: '⚡', title: 'Speed Reader', desc: 'Get a perfect run in under 30 seconds' },
+  { id: 'chatquiz_redemption',  game: 'xQc Chatter Quiz', icon: '🔁', title: 'Redemption',      desc: 'Get 3 correct in a row right after 3 wrong in a row' },
+  { id: 'chatquiz_no_first',    game: 'xQc Chatter Quiz', icon: '🌟', title: 'Slow Starter',    desc: 'Miss the first question but finish 9 out of 10' },
 
   // ── Words ─────────────────────────────────────────────────────────────────
   { id: 'words_first',     game: 'Words', icon: '🟩', title: 'First Word',   desc: 'Win your first Words game' },
@@ -63,6 +79,11 @@
   { id: 'words_hard_clutch',    game: 'Words', icon: '🎲', title: 'Clutch 5',       desc: 'Win on the 5th and final guess in Hard Mode' },
   { id: 'words_beat_clock',     game: 'Words', icon: '⏱️', title: 'Clockwork',      desc: 'Win in Hard Mode with 30 or more seconds left' },
   { id: 'words_hard_lightning', game: 'Words', icon: '⚡', title: 'Hard Lightning', desc: 'Win in Hard Mode in under 20 seconds' },
+  { id: 'words_flash',     game: 'Words', icon: '⚡', title: 'Flash',          desc: 'Win Words in under 15 seconds' },
+  { id: 'words_sniper',    game: 'Words', icon: '🎯', title: 'Sniper',         desc: 'Win without ever placing a yellow tile' },
+  { id: 'words_unlucky',   game: 'Words', icon: '🍀', title: 'Tough Luck',     desc: 'Lose a Words game' },
+  { id: 'words_almost',    game: 'Words', icon: '🎲', title: 'Down to the Wire',desc: 'Win on your 5th guess' },
+  { id: 'words_green_open', game: 'Words', icon: '🟢', title: 'Strong Opener',  desc: 'Get 2 or more greens on your first guess' },
 
   // ── Spelling Bee ───────────────────────────────────────────────────────────
   { id: 'spelling_first',      game: 'Spelling Bee', icon: '🐝', title: 'First Buzz',        desc: 'Spell your first word correctly' },
@@ -75,12 +96,21 @@
   { id: 'spelling_streak_5',   game: 'Spelling Bee', icon: '🔥', title: 'Buzzing',           desc: 'Spell 5 words correctly in a row' },
   { id: 'spelling_hot_start',  game: 'Spelling Bee', icon: '🚀', title: 'Strong Start',      desc: 'Spell the first 5 words correctly' },
   { id: 'spelling_clueless',   game: 'Spelling Bee', icon: '🤡', title: 'Buzzed Out',        desc: 'Get all 10 words wrong' },
+  { id: 'spelling_quarter',    game: 'Spelling Bee', icon: '🌱', title: 'Getting There',     desc: 'Spell 3 or more words correctly' },
+  { id: 'spelling_medium_sweep',game:'Spelling Bee', icon: '📘', title: 'Solid Footing',     desc: 'Spell all medium words correctly' },
+  { id: 'spelling_clutch',     game: 'Spelling Bee', icon: '💪', title: 'Clutch Speller',    desc: 'Spell the last word right after missing the first' },
+  { id: 'spelling_comeback',   game: 'Spelling Bee', icon: '🔄', title: 'Bounce Back',       desc: 'Miss the first word, then spell 5 in a row' },
+  { id: 'spelling_nightmare',  game: 'Spelling Bee', icon: '👹', title: 'Nightmare',         desc: 'Spell the nightmare word correctly (Hard mode)' },
 
   // ── Secret (easter eggs) ───────────────────────────────────────────────────
   // `secret: true` → shown as "???" with `hint` until unlocked.
   { id: 'egg_heart',     game: 'Secret', icon: '💌', title: 'Heartfelt',   desc: 'You clicked the heart that makes it all worthwhile', secret: true, hint: 'Some love is hiding in the footer…' },
   { id: 'egg_collector', game: 'Secret', icon: '💎', title: 'Treasure Hunter', desc: 'You found the secret in your rank emblem', secret: true, hint: 'That shiny emblem looks clickable…' },
   { id: 'egg_konami',    game: 'Secret', icon: '🎮', title: 'Old School',  desc: 'You entered the legendary code', secret: true, hint: '↑ ↑ ↓ ↓ … you know the rest' },
+  { id: 'egg_night_owl', game: 'Secret', icon: '🦉', title: 'Night Owl',   desc: 'You visited in the dead of night', secret: true, hint: 'The site hits different after midnight…' },
+  { id: 'egg_typist',    game: 'Secret', icon: '⌨️', title: 'Name Dropper', desc: "You typed the founder's name", secret: true, hint: 'Try typing a certain someone’s name…' },
+  { id: 'egg_persistent',game: 'Secret', icon: '🖱️', title: 'Persistent',  desc: 'One click of the heart was not enough', secret: true, hint: 'Show that ♥ some real love…' },
+  { id: 'egg_explorer',  game: 'Secret', icon: '🧭', title: 'Curious',     desc: 'You went looking for secrets', secret: true, hint: 'Just type what you are looking for…' },
 ];
 
 // ── Global completion (play count + day streak) ────────────────────────────────
@@ -129,10 +159,14 @@ function eggToast(id) {
 }
 
 function initEasterEggs() {
-  // Footer heart — click the ♥
+  // Footer heart — first click unlocks ♥; 10 total clicks unlocks "Persistent".
+  let heartClicks = 0;
   document.querySelectorAll('.egg-heart').forEach(el => {
     el.style.cursor = 'pointer';
-    el.addEventListener('click', () => eggUnlock('egg_heart'));
+    el.addEventListener('click', () => {
+      eggUnlock('egg_heart');
+      if (++heartClicks >= 10) eggUnlock('egg_persistent');
+    });
   });
 
   // Konami code — ↑↑↓↓←→←→ b a
@@ -143,6 +177,24 @@ function initEasterEggs() {
     if (k === seq[pos]) { pos++; if (pos === seq.length) { pos = 0; eggUnlock('egg_konami'); } }
     else { pos = (k === seq[0]) ? 1 : 0; }
   });
+
+  // Typed-word secrets — type the founder's name, or "secret", anywhere.
+  const words = [
+    { text: 'vopori', id: 'egg_typist' },
+    { text: 'secret', id: 'egg_explorer' },
+  ].map(w => ({ ...w, buf: '' }));
+  document.addEventListener('keydown', e => {
+    if (e.key.length !== 1) return;
+    const ch = e.key.toLowerCase();
+    for (const w of words) {
+      w.buf = (w.buf + ch).slice(-w.text.length);
+      if (w.buf === w.text) { w.buf = ''; eggUnlock(w.id); }
+    }
+  });
+
+  // Night owl — visiting between midnight and 5am local time.
+  const hr = new Date().getHours();
+  if (hr >= 0 && hr < 5) eggUnlock('egg_night_owl');
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEasterEggs);

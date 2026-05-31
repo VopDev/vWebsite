@@ -55,15 +55,25 @@ function checkAchievements(correct, elapsedMs) {
 
   if (log.length >= 5 && log.slice(0, 5).every(a => a.correct)) earn.push('chatquiz_hot_start');
 
+  // 3 correct in a row immediately after 3 wrong in a row.
+  for (let i = 0; i + 6 <= log.length; i++) {
+    if (log.slice(i, i + 3).every(a => !a.correct) && log.slice(i + 3, i + 6).every(a => a.correct)) {
+      earn.push('chatquiz_redemption'); break;
+    }
+  }
+
   const isComplete = log.length === questions.length;
   if (isComplete) {
     const correctCount = log.filter(a => a.correct).length;
     if (correctCount === questions.length) { earn.push('chatquiz_perfect'); earn.push('chatquiz_no_miss'); }
     if (correctCount === 0) earn.push('chatquiz_clueless');
     if (correctCount === questions.length - 1) earn.push('chatquiz_scholar');
+    if (correctCount >= 5) earn.push('chatquiz_half');
     if (totalElapsed <= 30000) earn.push('chatquiz_speed_run');
+    if (correctCount === questions.length && totalElapsed <= 30000) earn.push('chatquiz_flawless_speed');
     if (hintsUsedTotal === 0)  earn.push('chatquiz_no_hints');
     if (!log[0].correct && log[log.length - 1].correct) earn.push('chatquiz_clutch');
+    if (!log[0].correct && correctCount === questions.length - 1) earn.push('chatquiz_no_first');
     if (!log[0].correct) {
       for (let i = 1; i <= log.length - 5; i++) {
         if (log.slice(i, i + 5).every(a => a.correct)) { earn.push('chatquiz_second_wind'); break; }

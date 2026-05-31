@@ -399,6 +399,7 @@ function checkAchievements(game, slot) {
     if (game.guesses.length <= 2)            earn.push('songless_quick');
     if (game.guesses.length === MAX_GUESSES) earn.push('songless_clutch');
     if (!game.guesses.some(g => g.skipped))  earn.push('songless_no_skip');
+    if (hardMode && !game.guesses.some(g => g.skipped)) earn.push('songless_no_skip_hard');
     if (hardMode)                            earn.push('songless_hard_win');
     if (hardMode && game.guesses.length === 1) earn.push('songless_hard_first');
     if (hardMode && hardTimeLeft >= 15)        earn.push('songless_beat_clock');
@@ -407,16 +408,19 @@ function checkAchievements(game, slot) {
 
     const wrongCount = game.guesses.filter(g => !g.correct && !g.skipped).length;
     if (wrongCount >= 4) earn.push('songless_comeback');
+    if (wrongCount === 0) earn.push('songless_clean');
 
     const wonGames = state.games.filter(g => g.over && g.won);
     if (wonGames.length >= 1) {
       let streak = 0;
       for (const g of state.games) { if (g.over && g.won) streak++; else if (g.over) streak = 0; }
       if (streak >= 3) earn.push('songless_3_streak');
+      if (hardMode && streak >= 3) earn.push('songless_hard_streak');
     }
 
     const perfectCount = state.games.filter(g => g.over && g.won && g.guesses.length === 1).length;
     if (perfectCount >= 2) earn.push('songless_2x_perfect');
+    if (perfectCount >= 3) earn.push('songless_3x_perfect');
 
     if (state.games.every(g => g.over && g.won)) {
       earn.push('songless_sweep');

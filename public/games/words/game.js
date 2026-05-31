@@ -168,6 +168,10 @@ function checkAchievements(won, guessNum, answer) {
     if (guessNum <= 3)         earn.push('words_wordsmith');
     if (guessNum === MAX_ROWS) earn.push(hardMode ? 'words_hard_clutch' : 'words_comeback');
     if (elapsed < 45000)       earn.push('words_lightning');
+    if (elapsed < 15000)       earn.push('words_flash');
+    if (guessNum === 5)        earn.push('words_almost');
+    // Won without ever placing a yellow (no 'present' tiles in any guess).
+    if (guesses.every(g => g.evaluation.every(s => s !== 'present'))) earn.push('words_sniper');
 
     if (hardMode) {
       earn.push('words_hard_win');
@@ -179,12 +183,15 @@ function checkAchievements(won, guessNum, answer) {
     if (guesses.length > 0) {
       const first = guesses[0].evaluation;
       if (first.filter(s => s !== 'absent').length >= 3) earn.push('words_hot_start');
+      if (first.filter(s => s === 'correct').length >= 2) earn.push('words_green_open');
       if (first[0] === 'correct') earn.push('words_bull_eye');
       if (answer) {
         const ansSet = new Set(answer.split(''));
         if (guesses.flatMap(g => g.word.split('')).every(l => ansSet.has(l))) earn.push('words_no_miss');
       }
     }
+  } else {
+    earn.push('words_unlucky');
   }
 
   // Completing the game (win or lose) counts toward global play/streak achievements

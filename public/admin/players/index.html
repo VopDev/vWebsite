@@ -100,7 +100,14 @@
     .foot-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
     .danger-card { background: var(--surface); border: 1px solid #3d1a1a; border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .danger-card.nuke { border-color: #5a1212; background: #140707; }
     .danger-note { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+    .acct-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .acct-lbl { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); width: 4.5rem; }
+    .acct-lvl { font-size: 0.7rem; color: var(--muted); }
+    .acct-lvl b { color: var(--gold); }
+    .bulk-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .bulk-group h3 { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -148,6 +155,21 @@
         </div>
       </div>
 
+      <div class="card" style="padding:0.9rem 1.1rem;display:flex;flex-direction:column;gap:0.7rem">
+        <div class="acct-row">
+          <label class="acct-lbl">Username</label>
+          <input id="editName" class="sid-input" style="flex:1;min-width:130px" maxlength="16" placeholder="(auto handle)">
+          <button class="btn btn-default btn-sm" id="saveNameBtn">Save</button>
+        </div>
+        <div class="acct-row">
+          <label class="acct-lbl">XP</label>
+          <input id="editXp" type="number" min="0" class="sid-input mono" style="width:110px">
+          <span class="acct-lvl" id="editXpLevel"></span>
+          <button class="btn btn-default btn-sm" id="saveXpBtn">Save</button>
+        </div>
+        <p class="msg" id="editMsg"></p>
+      </div>
+
       <div>
         <h2 style="margin-bottom:0.6rem">Stats Across Games</h2>
         <div id="statsView" style="display:flex;flex-direction:column;gap:0.75rem"></div>
@@ -163,24 +185,55 @@
       </div>
 
       <div class="foot-actions">
-        <button class="btn btn-danger" id="resetAchBtn">Reset All Achievements</button>
-        <button class="btn btn-danger" id="resetAllBtn">Reset ALL Data</button>
+        <button class="btn btn-danger" id="resetGamesBtn">Reset Game Progress</button>
+        <button class="btn btn-danger" id="resetAchBtn">Reset Achievements</button>
+        <button class="btn btn-danger" id="deletePlayerBtn">Delete Player Data</button>
       </div>
       <p class="msg" id="detailMsg"></p>
     </div>
   </section>
 
-  <!-- Bulk danger zone -->
+  <!-- Bulk actions -->
   <section>
-    <h2>Bulk Actions</h2>
-    <div class="danger-card">
-      <p class="danger-note">Reset <strong>every</strong> player's Chatter Quiz progress for today (<span class="mono" id="todayLabel"></span>) so the whole audience can replay. Does not touch achievements or other games.</p>
-      <button class="btn btn-danger" id="resetAllChatterBtn" style="align-self:flex-start">Reset All Chatter Quiz Progress (Today)</button>
+    <h2>Bulk Actions — All Players</h2>
+
+    <div class="bulk-group">
+      <h3>Game Progress</h3>
+      <div class="danger-card">
+        <p class="danger-note">Reset everyone's saved game progress (all dates). Achievements, levels and usernames are kept.</p>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center">
+          <select id="bulkGameSel" class="sid-select" style="width:auto">
+            <option value="">All games</option>
+            <option value="words">Words</option>
+            <option value="songquiz">SongQuiz</option>
+            <option value="spelling">Spelling Bee</option>
+            <option value="chatter">Chatter Quiz</option>
+          </select>
+          <button class="btn btn-danger" id="resetGamesGlobalBtn">Reset Everyone's Progress</button>
+        </div>
+      </div>
+      <div class="danger-card">
+        <p class="danger-note">Reset <strong>today's</strong> Chatter Quiz progress for everyone (<span class="mono" id="todayLabel"></span>) so the whole audience can replay just today.</p>
+        <button class="btn btn-danger" id="resetAllChatterBtn" style="align-self:flex-start">Reset Chatter Quiz (Today)</button>
+      </div>
     </div>
-    <div class="danger-card">
-      <p class="danger-note">Wipe <strong>all achievements for all players</strong>. Game stats are kept. Cannot be undone.</p>
-      <button class="btn btn-danger" id="resetAllAchBtn" style="align-self:flex-start">Reset ALL Achievements (Everyone)</button>
+
+    <div class="bulk-group">
+      <h3>Achievements</h3>
+      <div class="danger-card">
+        <p class="danger-note">Wipe <strong>all achievements for all players</strong>. Game progress is kept. Cannot be undone.</p>
+        <button class="btn btn-danger" id="resetAllAchBtn" style="align-self:flex-start">Reset All Achievements (Everyone)</button>
+      </div>
     </div>
+
+    <div class="bulk-group">
+      <h3>Danger Zone</h3>
+      <div class="danger-card nuke">
+        <p class="danger-note">Permanently delete <strong>ALL player data</strong> — every account, game state, achievement and username. The <strong>Vopori</strong> account is preserved. This cannot be undone.</p>
+        <button class="btn btn-danger" id="deleteEverythingBtn" style="align-self:flex-start">Delete ALL Player Data</button>
+      </div>
+    </div>
+
     <p class="msg" id="bulkMsg"></p>
   </section>
 </div>
@@ -204,6 +257,9 @@
   }
   function fmtDate(iso) {
     return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   // Per-game reset wiring + which aggregate tiles to show.
@@ -318,9 +374,13 @@
     const nameEl = document.getElementById('dName');
     const roleBadge = p.role === 'admin' ? 'Admin' : (p.role === 'staff' ? 'Staff' : '');
     nameEl.className = `detail-name${p.staff ? ' staff' : ''}`;
-    nameEl.innerHTML = `${p.handle}${p.custom ? '<span class="tag">custom</span>' : ''}${roleBadge ? `<span class="staff-badge">${roleBadge}</span>` : ''}`;
+    nameEl.innerHTML = `${escapeHtml(p.handle)}${roleBadge ? `<span class="staff-badge">${roleBadge}</span>` : ''}`;
     document.getElementById('dSid').textContent = p.sid;
     document.getElementById('dAch').textContent = p.achievements.length;
+    document.getElementById('editName').value = p.custom ? p.handle : '';
+    document.getElementById('editXp').value = p.xp ?? 0;
+    document.getElementById('editXpLevel').innerHTML = `Level <b>${p.level ?? 1}</b>`;
+    setMsg('editMsg', '');
     renderRole();
 
     // Per-game stat cards
@@ -431,9 +491,54 @@
     } catch { setMsg('detailMsg', 'Failed.', 'err'); }
   });
 
-  document.getElementById('resetAllBtn').addEventListener('click', async () => {
+  // ── Account edits (username + XP) ────────────────────────────────────────────
+  document.getElementById('saveNameBtn').addEventListener('click', async () => {
     if (!current) return;
-    if (!confirm(`Permanently delete ALL data for ${current.handle}?\n\nThis wipes every game state (all dates), achievements, custom username and passkey. Cannot be undone.`)) return;
+    const name = document.getElementById('editName').value.trim();
+    try {
+      const res = await fetch(`/admin/api/players?sid=${enc(current.sid)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setMsg('editMsg', data.error || 'Could not save.', 'err'); return; }
+      current.handle = data.handle; current.custom = data.custom;
+      const r = players.find(x => x.sid === current.sid);
+      if (r) { r.handle = data.handle; r.custom = data.custom; }
+      renderDetail(); renderOptions();
+      setMsg('editMsg', 'Username updated.', 'ok');
+    } catch { setMsg('editMsg', 'Failed.', 'err'); }
+  });
+
+  document.getElementById('saveXpBtn').addEventListener('click', async () => {
+    if (!current) return;
+    const xp = parseInt(document.getElementById('editXp').value, 10);
+    if (!Number.isFinite(xp) || xp < 0) { setMsg('editMsg', 'Enter a valid XP amount.', 'err'); return; }
+    try {
+      const res  = await fetch(`/admin/api/players?sid=${enc(current.sid)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ xp }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setMsg('editMsg', 'Could not save.', 'err'); return; }
+      current.xp = data.xp; current.level = data.level; current.adjust = data.adjust;
+      document.getElementById('editXpLevel').innerHTML = `Level <b>${data.level}</b>`;
+      setMsg('editMsg', `XP set to ${data.xp} (level ${data.level}).`, 'ok');
+    } catch { setMsg('editMsg', 'Failed.', 'err'); }
+  });
+
+  // ── Per-player resets ────────────────────────────────────────────────────────
+  document.getElementById('resetGamesBtn').addEventListener('click', async () => {
+    if (!current || !confirm(`Reset ALL game progress (every game, all dates) for ${current.handle}? Achievements and level are kept.`)) return;
+    try {
+      const res  = await fetch(`/admin/api/players?sid=${enc(current.sid)}&scope=games`, { method: 'DELETE' });
+      const data = await res.json();
+      GAMES.forEach(g => { const el = document.getElementById('today-' + g.key); if (el) el.textContent = '—'; });
+      setMsg('detailMsg', `Cleared ${data.deleted} game record(s).`, 'ok');
+    } catch { setMsg('detailMsg', 'Failed.', 'err'); }
+  });
+
+  document.getElementById('deletePlayerBtn').addEventListener('click', async () => {
+    if (!current) return;
+    if (!confirm(`Permanently delete ALL data for ${current.handle}?\n\nThis wipes every game state (all dates), achievements, XP, username, role and passkey. Cannot be undone.`)) return;
     try {
       const res  = await fetch(`/admin/api/players?sid=${enc(current.sid)}&scope=all`, { method: 'DELETE' });
       const data = await res.json();
@@ -445,7 +550,18 @@
     } catch { setMsg('detailMsg', 'Failed.', 'err'); }
   });
 
-  // ── Bulk ─────────────────────────────────────────────────────────────────────
+  // ── Bulk (all players) ───────────────────────────────────────────────────────
+  document.getElementById('resetGamesGlobalBtn').addEventListener('click', async () => {
+    const game  = document.getElementById('bulkGameSel').value;
+    const label = game ? document.getElementById('bulkGameSel').selectedOptions[0].textContent : 'every game';
+    if (!confirm(`Reset ${label} progress for ALL players (all dates)? Achievements and levels are kept. This cannot be undone.`)) return;
+    try {
+      const res  = await fetch(`/admin/api/players?scope=games${game ? `&game=${game}` : ''}`, { method: 'DELETE' });
+      if (res.status === 403) { setMsg('bulkMsg', 'Administrator role required.', 'err'); return; }
+      const data = await res.json();
+      setMsg('bulkMsg', `Cleared ${data.deleted} game record(s).`, 'ok');
+    } catch { setMsg('bulkMsg', 'Failed.', 'err'); }
+  });
   document.getElementById('resetAllChatterBtn').addEventListener('click', async () => {
     if (!confirm(`Reset all players' Chatter Quiz progress for ${TODAY}? Everyone will be able to play again.`)) return;
     try {
@@ -463,6 +579,20 @@
       if (current) { current.achievements = []; document.getElementById('dAch').textContent = '0'; renderAchievements(); }
       players.forEach(p => p.achievements = 0); renderOptions();
       setMsg('bulkMsg', `Deleted ${data.deleted} player record(s).`, 'ok');
+    } catch { setMsg('bulkMsg', 'Failed.', 'err'); }
+  });
+
+  document.getElementById('deleteEverythingBtn').addEventListener('click', async () => {
+    if (!confirm('Delete ALL player data for EVERY account except Vopori?\n\nThis erases all game states, achievements, XP, usernames, roles and passkeys. It CANNOT be undone.')) return;
+    if (!confirm('Are you absolutely sure? This is permanent.')) return;
+    try {
+      const res = await fetch('/admin/api/players?scope=everything', { method: 'DELETE' });
+      if (res.status === 403) { setMsg('bulkMsg', 'Administrator role required.', 'err'); return; }
+      const data = await res.json();
+      document.getElementById('detail').classList.remove('open');
+      current = null;
+      await loadPlayers();
+      setMsg('bulkMsg', `Deleted ${data.deleted} record(s). Vopori preserved: ${data.keptVopori ? 'yes' : 'no'}.`, 'ok');
     } catch { setMsg('bulkMsg', 'Failed.', 'err'); }
   });
 

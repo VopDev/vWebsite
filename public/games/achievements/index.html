@@ -136,6 +136,45 @@
     .profile-btn.lock { font-size: 0.8rem; }
     .profile-lockrow .profile-msg { flex-basis: 100%; margin-top: 0.1rem; }
     @media (max-width: 480px) { .profile-card { flex-wrap: wrap; } }
+
+    /* Level emblem (replaces the static avatar) */
+    .level-emblem {
+      position: relative; width: 3.4rem; height: 3.4rem; flex: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: var(--surface2); border: 1px solid var(--gold); border-radius: 14px;
+      box-shadow: 0 0 14px rgba(245,158,11,0.18);
+    }
+    .level-emblem .lv-cap { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.12em; color: var(--gold); line-height: 1; }
+    .level-emblem .lv-num { font-size: 1.35rem; font-weight: 800; line-height: 1; color: var(--text); }
+
+    /* XP bar in the player card */
+    .xp-block { margin-top: 0.8rem; }
+    .xp-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.7rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .xp-top .xp-lvl { font-weight: 700; letter-spacing: 0.04em; color: var(--text); }
+    .xp-top .xp-amt b { color: var(--text); }
+    .xp-track { height: 9px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
+    .xp-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 5px; transition: width 0.6s ease; }
+    .xp-total { font-size: 0.62rem; color: var(--muted); margin-top: 0.3rem; }
+    .xp-total strong { color: var(--text); }
+
+    /* Leaderboard panel (replaces the rank panel) */
+    .lb-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    .lb-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; }
+    .lb-list { display: flex; flex-direction: column; gap: 0.2rem; }
+    .lb-row { display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.5rem; border-radius: 8px; border: 1px solid transparent; }
+    .lb-row.me { background: var(--surface2); border-color: var(--border2); }
+    .lb-rank { width: 1.7rem; text-align: center; font-size: 0.78rem; font-weight: 800; color: var(--muted); flex-shrink: 0; }
+    .lb-rank.top1 { color: #f5b301; } .lb-rank.top2 { color: #c0c0c0; } .lb-rank.top3 { color: #cd7f32; }
+    .lb-name { flex: 1; min-width: 0; font-size: 0.8rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-name.staff { color: #ef4444; }
+    .lb-lvl { font-size: 0.6rem; color: var(--muted); flex-shrink: 0; }
+    .lb-pts { font-size: 0.74rem; font-weight: 700; color: var(--text); flex-shrink: 0; min-width: 3.2rem; text-align: right; }
+    .lb-foot { font-size: 0.66rem; color: var(--muted); text-align: center; padding-top: 0.4rem; border-top: 1px solid var(--border); }
+    .lb-foot strong { color: var(--text); }
+
+    /* XP badge on each achievement card */
+    .ach-pts { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em; color: var(--gold); margin-left: auto; flex-shrink: 0; align-self: flex-start; }
+    .ach-card.locked .ach-pts { color: var(--muted); }
   </style>
 </head>
 <body>
@@ -150,10 +189,20 @@
   </header>
 
   <section class="profile-card" id="profileCard">
-    <div class="profile-avatar">🙂</div>
+    <div class="level-emblem" id="levelEmblem" title="Your level">
+      <span class="lv-cap">LVL</span><span class="lv-num" id="lvNum">–</span>
+    </div>
     <div class="profile-main">
       <div class="profile-label">Your username</div>
       <div class="profile-name" id="profileName">…</div>
+      <div class="xp-block" id="xpBlock" hidden>
+        <div class="xp-top">
+          <span class="xp-lvl">Level <span id="xpLevel">1</span></span>
+          <span class="xp-amt"><b id="xpInto">0</b> / <span id="xpNeed">0</span> XP</span>
+        </div>
+        <div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+        <div class="xp-total" id="xpTotal"></div>
+      </div>
       <div class="profile-edit" id="profileEdit" hidden>
         <input id="usernameInput" type="text" maxlength="16" placeholder="Choose a username"
                autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -177,7 +226,11 @@
   <div class="layout">
     <div class="main-col" id="achSections"></div>
     <div class="rank-col">
-      <div class="rank-panel" id="rankPanel"></div>
+      <div class="lb-panel">
+        <div class="lb-title"><span>Leaderboard</span><span id="lbCount"></span></div>
+        <div class="lb-list" id="lbList"><p style="font-size:0.75rem;color:var(--muted)">Loading…</p></div>
+        <div class="lb-foot" id="lbFoot" hidden></div>
+      </div>
     </div>
   </div>
 
@@ -205,78 +258,66 @@
 <script src="/games/passkey.js"></script>
 <script src="/games/achievements.js"></script>
 <script>
-  const RANKS = [
-    { name: 'Bronze',   icon: '🥉', color: '#cd7f32', glow: 'rgba(205,127,50,0.4)',  min: 0,  max: 10  },
-    { name: 'Silver',   icon: '🥈', color: '#c0c0c0', glow: 'rgba(192,192,192,0.4)', min: 10, max: 35  },
-    { name: 'Gold',     icon: '🥇', color: '#f5b301', glow: 'rgba(245,179,1,0.45)',  min: 35, max: 65  },
-    { name: 'Diamond',  icon: '💎', color: '#4dd0e1', glow: 'rgba(77,208,225,0.45)', min: 65, max: 95  },
-    { name: 'Platinum', icon: '🏆', color: '#e5e4e2', glow: 'rgba(229,228,226,0.5)', min: 95, max: 100 },
-  ];
+  let pointsMap = {};  // id → XP, from the leaderboard endpoint
 
-  function renderRank(pct) {
-    let current = RANKS[0];
-    for (const r of RANKS) if (pct >= r.min) current = r;
-    const idx  = RANKS.indexOf(current);
-    const next = RANKS[idx + 1];
+  function renderXp(me) {
+    if (!me) return;
+    document.getElementById('lvNum').textContent   = me.level;
+    document.getElementById('xpLevel').textContent = me.level;
+    const into = me.atMax ? me.levelSpan : me.intoLevel;
+    const need = me.levelSpan;
+    document.getElementById('xpInto').textContent = me.atMax ? me.points : into;
+    document.getElementById('xpNeed').textContent = me.atMax ? me.points : need;
+    document.getElementById('xpFill').style.width  = me.atMax ? '100%' : Math.round(into / need * 100) + '%';
+    document.getElementById('xpTotal').innerHTML = me.atMax
+      ? `<strong>Max level reached</strong> · ${me.points} XP total`
+      : `<strong>${me.points} XP</strong> total${me.rank ? ` · rank #${me.rank} of ${me.players}` : ''}`;
+    document.getElementById('xpBlock').hidden = false;
+  }
 
-    let nextHtml;
-    if (next) {
-      const span     = next.min - current.min;
-      const intoTier = Math.min(100, Math.max(0, Math.round((pct - current.min) / span * 100)));
-      const remain   = Math.max(0, next.min - pct);
-      nextHtml = `<div class="rank-next">
-        <div class="rank-next-label"><span>To ${next.name}</span><span>${remain}% to go</span></div>
-        <div class="rank-next-track"><div class="rank-next-fill" style="width:${intoTier}%;background:${next.color}"></div></div>
-      </div>`;
-    } else {
-      nextHtml = `<div class="rank-next">
-        <div class="rank-next-label"><span>Max Rank</span><span>★</span></div>
-        <div class="rank-next-track"><div class="rank-next-fill" style="width:100%;background:${current.color}"></div></div>
-      </div>`;
+  function renderLeaderboard(lb) {
+    const list = document.getElementById('lbList');
+    if (!lb || !lb.top || !lb.top.length) {
+      list.innerHTML = '<p style="font-size:0.75rem;color:var(--muted)">No players ranked yet — earn an achievement to get on the board!</p>';
+      return;
     }
+    document.getElementById('lbCount').textContent = `${lb.me && lb.me.players ? lb.me.players : lb.top.length} players`;
+    list.innerHTML = lb.top.map(r => `
+      <div class="lb-row${r.me ? ' me' : ''}">
+        <span class="lb-rank${r.rank <= 3 ? ' top' + r.rank : ''}">${r.rank}</span>
+        <span class="lb-name${r.staff ? ' staff' : ''}">${escapeHtml(r.handle)}</span>
+        <span class="lb-lvl">Lv ${r.level}</span>
+        <span class="lb-pts">${r.points} XP</span>
+      </div>`).join('');
 
-    const ladder = [...RANKS].reverse().map(r => {
-      const isActive = r.name === current.name;
-      const reached  = pct >= r.min;
-      return `<div class="ladder-row ${isActive ? 'active' : ''} ${reached ? '' : 'locked'}">
-        <span class="ladder-icon">${r.icon}</span>
-        <div class="ladder-info">
-          <span class="ladder-name" style="${isActive ? `color:${r.color}` : ''}">${r.name}</span>
-          <span class="ladder-range">${r.min}–${r.max}%</span>
-        </div>
-        ${reached ? '<span class="ladder-check">✓</span>' : ''}
-      </div>`;
-    }).join('');
+    const foot = document.getElementById('lbFoot');
+    if (lb.me && lb.me.rank && lb.me.rank > lb.top.length) {
+      foot.hidden = false;
+      foot.innerHTML = `You: <strong>#${lb.me.rank}</strong> · ${lb.me.points} XP`;
+    } else { foot.hidden = true; }
+  }
 
-    document.getElementById('rankPanel').innerHTML = `
-      <div class="rank-current" style="--rank-color:${current.color};--rank-glow:${current.glow}">
-        <div class="rank-emblem" id="rankEmblem" style="cursor:pointer">${current.icon}</div>
-        <div class="rank-name">${current.name}</div>
-        <div class="rank-pct"><strong>${pct}%</strong> complete</div>
-      </div>
-      ${nextHtml}
-      <div class="rank-ladder">${ladder}</div>`;
-
-    // Easter egg: click the emblem 5 times
-    let emblemClicks = 0;
-    document.getElementById('rankEmblem').addEventListener('click', () => {
-      if (++emblemClicks >= 5) { emblemClicks = 0; eggUnlock('egg_collector'); }
-    });
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   async function init() {
-    let unlocked = [];
-    try { unlocked = await fetch('/api/achievements').then(r => r.json()); } catch {}
+    const [unlocked, lb] = await Promise.all([
+      fetch('/api/achievements').then(r => r.json()).catch(() => []),
+      fetch('/api/leaderboard').then(r => r.json()).catch(() => null),
+    ]);
+    if (lb && lb.points) pointsMap = lb.points;
 
     const unlockedMap = Object.fromEntries(unlocked.map(a => [a.id, a]));
     const total     = ALL_ACHIEVEMENTS.length;
     const doneCount = ALL_ACHIEVEMENTS.filter(a => unlockedMap[a.id]).length;
-    const overallPct = total ? Math.round(doneCount / total * 100) : 0;
+    const myXp      = lb && lb.me ? lb.me.points : 0;
 
     document.getElementById('progressLabel').innerHTML =
-      `<strong style="color:var(--text)">${doneCount}/${total}</strong> achievements unlocked`;
+      `<strong style="color:var(--text)">${doneCount}/${total}</strong> achievements · <strong style="color:var(--gold)">${myXp} XP</strong>`;
 
-    renderRank(overallPct);
+    if (lb && lb.me) renderXp(lb.me);
+    renderLeaderboard(lb);
 
     const games = [...new Set(ALL_ACHIEVEMENTS.map(a => a.game))];
 
@@ -295,6 +336,7 @@
         const icon   = hidden ? '❓' : a.icon;
         const title  = hidden ? '???' : a.title;
         const desc   = hidden ? (a.hint || 'Hidden achievement') : a.desc;
+        const pts    = pointsMap[a.id];
         return `<div class="ach-card ${entry ? 'unlocked' : 'locked'}${a.secret ? ' secret' : ''}">
           <div class="ach-icon">${icon}</div>
           <div class="ach-info">
@@ -302,6 +344,7 @@
             <div class="ach-desc">${desc}</div>
             ${dateStr ? `<div class="ach-date">Unlocked ${dateStr}</div>` : ''}
           </div>
+          ${pts != null ? `<div class="ach-pts">+${pts}</div>` : ''}
         </div>`;
       }).join('');
 
@@ -333,6 +376,13 @@
     const open = body.classList.toggle('open');
     hdr.classList.toggle('open', open);
   }
+
+  // Easter egg: click the level emblem 5 times (was the old rank emblem).
+  (function () {
+    let clicks = 0;
+    const el = document.getElementById('levelEmblem');
+    if (el) el.addEventListener('click', () => { if (++clicks >= 5) { clicks = 0; eggUnlock('egg_collector'); } });
+  })();
 
   init();
 </script>

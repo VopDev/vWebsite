@@ -1,4 +1,16 @@
 import { identify, handleFromSid, getRole, isAdmin, BOOTSTRAP_ADMIN, ROLES } from '../../api/_identity.js';
+import { pointsFor, progress } from '../../api/_achievements.js';
+import { isProfane } from '../../api/_profanity.js';
+
+// Manual XP adjustment (admin-editable) layered on top of achievement points.
+const adjustKey = (sid) => `xp-adjust-${sid}`;
+async function getAdjust(KV, sid) {
+  return parseInt((await KV.get(adjustKey(sid))) || '0', 10) || 0;
+}
+async function totalXp(KV, sid, achievements) {
+  const base = pointsFor(achievements || []);
+  return Math.max(0, base + await getAdjust(KV, sid));
+}
 
 // Per-player state lives under several KV key shapes. The sid is always a
 // 36-char UUID that sits immediately after the prefix, so we can both discover
@@ -124,12 +136,15 @@ export async function onRequestGet({ request, env }) {
 
   // ── Single-player profile: stats across every game + achievements ───────────
   if (sid) {
-    const [name, achievements, games, role] = await Promise.all([
+    const [name, achievements, games, role, adjust] = await Promise.all([
       KV.get(`profile-name-${sid}`),
       KV.get(`achievements-${sid}`, 'json'),
       buildGameStats(KV, sid),
       getRole(env, sid),
+      getAdjust(KV, sid),
     ]);
+    const achs   = achievements || [];
+    const points = Math.max(0, pointsFor(achs) + adjust);
     return Response.json({
       sid,
       handle: name || handleFromSid(sid),
@@ -137,8 +152,12 @@ export async function onRequestGet({ request, env }) {
       role,
       staff: role !== 'player',
       admin: role === 'admin',
-      achievements: achievements || [],
+      achievements: achs,
       games,
+      xp: points,
+      baseXp: pointsFor(achs),
+      adjust,
+      level: progress(points).level,
     });
   }
 
@@ -184,50 +203,175 @@ export async function onRequestGet({ request, env }) {
   return Response.json(players);
 }
 
-// POST /admin/api/players?sid=…  body { role: 'player'|'staff'|'admin' }
-// Managing roles is restricted to Administrators (not plain staff).
+/**
+ * POST /admin/api/players?sid=…   (one of:)
+ *   { role: 'player'|'staff'|'admin' }  → set role            (Administrators only)
+ *   { name: '…' }                       → set/clear username   (staff; '' resets to auto)
+ *   { xp: <number> }                    → set total XP         (staff; stores an adjustment)
+ */
+const NAME_RE = /^[A-Za-z0-9 _-]+$/;
+
 export async function onRequestPost({ request, env }) {
+  const KV        = env.SONGLESS_KV;
   const requester = await identify(request, env);
-  if (!requester.sid || !(await isAdmin(env, requester.sid))) {
-    return new Response('Forbidden — administrator role required.', { status: 403 });
-  }
+  if (!requester.sid) return new Response('Forbidden', { status: 403 });
 
   const url  = new URL(request.url);
   const sid  = url.searchParams.get('sid');
   const body = await request.json().catch(() => ({}));
-  const role = body.role;
-  if (!sid || !ROLES.includes(role)) return new Response('Bad request', { status: 400 });
+  if (!sid) return new Response('Bad request', { status: 400 });
 
-  await env.SONGLESS_KV.put(`role-${sid}`, role);
-  return Response.json({ role, staff: role !== 'player', admin: role === 'admin' });
+  // ── Role (Administrators only) ──────────────────────────────────────────────
+  if ('role' in body) {
+    if (!(await isAdmin(env, requester.sid))) return new Response('Forbidden — administrator role required.', { status: 403 });
+    if (!ROLES.includes(body.role)) return new Response('Bad request', { status: 400 });
+    await KV.put(`role-${sid}`, body.role);
+    return Response.json({ role: body.role, staff: body.role !== 'player', admin: body.role === 'admin' });
+  }
+
+  // ── Username override (staff — for moderating bad names) ─────────────────────
+  if ('name' in body) {
+    const name    = String(body.name ?? '').trim().replace(/\s+/g, ' ');
+    const oldName = await KV.get(`profile-name-${sid}`);
+    if (!name) {
+      await KV.delete(`profile-name-${sid}`);
+      if (oldName) await KV.delete(`username-${oldName.toLowerCase()}`);
+      return Response.json({ handle: handleFromSid(sid), custom: false });
+    }
+    if (name.length < 3 || name.length > 16) return Response.json({ error: 'Username must be 3–16 characters.' }, { status: 422 });
+    if (!NAME_RE.test(name))                  return Response.json({ error: 'Only letters, numbers, spaces, hyphens and underscores.' }, { status: 422 });
+    if (isProfane(name))                      return Response.json({ error: 'That username isn’t allowed.' }, { status: 422 });
+    const owner = await KV.get(`username-${name.toLowerCase()}`);
+    if (owner && owner !== sid)               return Response.json({ error: 'That username is already taken.' }, { status: 422 });
+    if (oldName && oldName.toLowerCase() !== name.toLowerCase()) await KV.delete(`username-${oldName.toLowerCase()}`);
+    await KV.put(`profile-name-${sid}`, name);
+    await KV.put(`username-${name.toLowerCase()}`, sid);
+    return Response.json({ handle: name, custom: true });
+  }
+
+  // ── XP override (staff) — store the delta so level tracks the new total ──────
+  if ('xp' in body) {
+    const target = Math.max(0, Math.round(Number(body.xp)));
+    if (!Number.isFinite(target)) return new Response('Bad request', { status: 400 });
+    const achs   = (await KV.get(`achievements-${sid}`, 'json')) || [];
+    const base   = pointsFor(achs);
+    const adjust = target - base;
+    if (adjust === 0) await KV.delete(adjustKey(sid));
+    else              await KV.put(adjustKey(sid), String(adjust));
+    return Response.json({ xp: target, baseXp: base, adjust, level: progress(target).level });
+  }
+
+  return new Response('Bad request', { status: 400 });
 }
 
-// DELETE /admin/api/players?sid=…&scope=all → wipe every trace of one player:
-// all game states (every date/mode), achievements, custom name and passkey.
+// Per-game KV prefixes (game states). `cq-seen-` is paired with chatter.
+const GAME_PREFIXES = {
+  words:    ['words-state-'],
+  songquiz: ['state-'],
+  spelling: ['spelling-state-'],
+  chatter:  ['cq-state-', 'cq-seen-'],
+};
+const ALL_GAME_PREFIXES = [...STATE_PREFIXES, 'cq-seen-'];
+
+// Delete every key under `prefix` EXCEPT those belonging to `keepSid`. For state
+// keys the sid is the 36 chars after the prefix; for direct keys it's the rest.
+async function deleteExcept(KV, prefix, keepSid, sidLen) {
+  let cursor, deleted = 0;
+  do {
+    const res  = await KV.list({ prefix, limit: 1000, cursor });
+    const dels = res.keys.map(k => k.name).filter(name => {
+      const sid = sidLen ? name.slice(prefix.length, prefix.length + sidLen) : name.slice(prefix.length);
+      return sid !== keepSid;
+    });
+    await Promise.all(dels.map(n => KV.delete(n)));
+    deleted += dels.length;
+    cursor = res.list_complete ? undefined : res.cursor;
+  } while (cursor);
+  return deleted;
+}
+
+// Wipe one player completely: game states, achievements, name, role, passkey.
+async function wipePlayer(KV, sid) {
+  const keys = [`achievements-${sid}`, `profile-name-${sid}`, `role-${sid}`, `xp-adjust-${sid}`];
+  const name = await KV.get(`profile-name-${sid}`);
+  if (name) keys.push(`username-${name.toLowerCase()}`);
+  for (const prefix of ALL_GAME_PREFIXES) keys.push(...await listAll(KV, `${prefix}${sid}-`));
+  const passkey = await KV.get(`passkey-${sid}`, 'json');
+  keys.push(`passkey-${sid}`);
+  if (passkey?.credId) keys.push(`passkey-cred-${passkey.credId}`);
+  await Promise.all(keys.map(k => KV.delete(k)));
+  return keys.length;
+}
+
+// Delete a player's game progress only (keeps achievements/level/profile/role).
+async function wipePlayerGames(KV, sid, prefixes) {
+  const keys = [];
+  for (const prefix of prefixes) keys.push(...await listAll(KV, `${prefix}${sid}-`));
+  await Promise.all(keys.map(k => KV.delete(k)));
+  return keys.length;
+}
+
+/**
+ * DELETE /admin/api/players
+ *   ?sid=…&scope=all              → wipe one player completely
+ *   ?sid=…&scope=games[&game=…]   → wipe one player's game progress (all or one game)
+ *   ?scope=games[&game=…]         → GLOBAL: every player's game progress  (admin only)
+ *   ?scope=everything             → GLOBAL: ALL player data except the Vopori account (admin only)
+ */
 export async function onRequestDelete({ request, env }) {
   const KV    = env.SONGLESS_KV;
   const url   = new URL(request.url);
   const sid   = url.searchParams.get('sid');
   const scope = url.searchParams.get('scope') || 'all';
-  if (!sid || scope !== 'all') return new Response('Bad request', { status: 400 });
+  const game  = url.searchParams.get('game');
+  const prefixes = (game && GAME_PREFIXES[game]) ? GAME_PREFIXES[game] : ALL_GAME_PREFIXES;
 
-  const keys = [
-    `achievements-${sid}`,
-    `profile-name-${sid}`,
-    `role-${sid}`,
-  ];
-  // Release the player's reserved username, if any.
-  const name = await KV.get(`profile-name-${sid}`);
-  if (name) keys.push(`username-${name.toLowerCase()}`);
-  for (const prefix of [...STATE_PREFIXES, 'cq-seen-']) {
-    keys.push(...await listAll(KV, `${prefix}${sid}-`));
+  // ── Single player (staff allowed) ───────────────────────────────────────────
+  if (sid) {
+    if (scope === 'games') return Response.json({ deleted: await wipePlayerGames(KV, sid, prefixes) });
+    if (scope === 'all')   return Response.json({ deleted: await wipePlayer(KV, sid) });
+    return new Response('Bad request', { status: 400 });
   }
 
-  // Passkey: remove both the forward record and its reverse credential lookup.
-  const passkey = await KV.get(`passkey-${sid}`, 'json');
-  keys.push(`passkey-${sid}`);
-  if (passkey?.credId) keys.push(`passkey-cred-${passkey.credId}`);
+  // ── Global ops (Administrators only) ────────────────────────────────────────
+  const requester = await identify(request, env);
+  if (!requester.sid || !(await isAdmin(env, requester.sid))) {
+    return new Response('Forbidden — administrator role required.', { status: 403 });
+  }
 
-  await Promise.all(keys.map(k => KV.delete(k)));
-  return Response.json({ deleted: keys.length });
+  if (scope === 'games') {
+    let deleted = 0;
+    for (const p of prefixes) {
+      const ks = await listAll(KV, p);
+      await Promise.all(ks.map(k => KV.delete(k)));
+      deleted += ks.length;
+    }
+    return Response.json({ deleted });
+  }
+
+  if (scope === 'everything') {
+    // Preserve the Vopori account (the owner's personal account) entirely.
+    const vopSid = await KV.get('username-vopori');
+    let deleted = 0;
+
+    for (const p of ['achievements-', 'profile-name-', 'role-', 'xp-adjust-']) deleted += await deleteExcept(KV, p, vopSid, 0);
+    for (const p of ALL_GAME_PREFIXES)                            deleted += await deleteExcept(KV, p, vopSid, 36);
+
+    // Usernames: keep Vopori's reservation.
+    const unames = (await listAll(KV, 'username-')).filter(k => k !== 'username-vopori');
+    await Promise.all(unames.map(k => KV.delete(k)));
+    deleted += unames.length;
+
+    // Passkeys: forward `passkey-{sid}` (skip Vopori), reverse `passkey-cred-{id}`
+    // (skip the one owned by Vopori), and clear all ephemeral challenges.
+    for (const k of await listAll(KV, 'passkey-')) {
+      if (k.startsWith('passkey-cred-')) { if ((await KV.get(k)) !== vopSid) { await KV.delete(k); deleted++; } }
+      else if (k.startsWith('passkey-chal-')) { await KV.delete(k); deleted++; }
+      else if (k.slice('passkey-'.length) !== vopSid) { await KV.delete(k); deleted++; }
+    }
+
+    return Response.json({ deleted, keptVopori: !!vopSid });
+  }
+
+  return new Response('Bad request', { status: 400 });
 }

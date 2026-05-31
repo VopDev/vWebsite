@@ -57,6 +57,24 @@
 
     .subtitle { color: var(--muted); font-size: 0.875rem; }
 
+    /* Header layout + mini player card */
+    .hub-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap; }
+    .mini-card {
+      display: flex; flex-direction: column; gap: 0.4rem;
+      min-width: 190px; text-decoration: none;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.7rem 0.85rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .mini-card:hover { border-color: var(--border2); background: var(--surface2); }
+    .mini-name { font-size: 0.9rem; font-weight: 800; color: var(--text); }
+    .mini-row { display: flex; align-items: baseline; justify-content: space-between; font-size: 0.66rem; color: var(--muted); }
+    .mini-row b { color: var(--text); }
+    .mini-xp { font-variant-numeric: tabular-nums; }
+    .mini-track { height: 7px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+    .mini-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius: 4px; transition: width 0.6s ease; }
+    @media (max-width: 520px) { .mini-card { width: 100%; } }
+
     .games-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -162,8 +180,17 @@
         <a href="/admin" data-admin-only hidden
            style="color:#ef4444;text-decoration:none;font-size:0.78rem;font-weight:700;letter-spacing:0.05em">⚙ Admin Portal</a>
       </div>
-      <h1>Games</h1>
-      <p class="subtitle">Daily games — new challenge every day.</p>
+      <div class="hub-head">
+        <div>
+          <h1>Games</h1>
+          <p class="subtitle">Daily games — new challenge every day.</p>
+        </div>
+        <a href="/games/achievements/" class="mini-card" id="miniCard" hidden title="View your achievements">
+          <div class="mini-name" data-player-handle>…</div>
+          <div class="mini-row"><span>Level <b id="miniLevel">–</b></span><span class="mini-xp" id="miniXp"></span></div>
+          <div class="mini-track"><div class="mini-fill" id="miniFill" style="width:0%"></div></div>
+        </a>
+      </div>
     </header>
 
     <div class="games-grid">
@@ -289,5 +316,19 @@
   </script>
   <script src="/games/identity.js"></script>
   <script src="/games/achievements.js"></script>
+  <script>
+    // Mini player card: identity.js fills the username (+ staff badge); we add level/XP.
+    (async function () {
+      try {
+        const lb = await fetch('/api/leaderboard').then(r => r.json());
+        const me = lb && lb.me;
+        if (!me) return;
+        document.getElementById('miniLevel').textContent = me.level;
+        document.getElementById('miniXp').textContent = me.atMax ? `${me.points} XP` : `${me.intoLevel} / ${me.levelSpan} XP`;
+        document.getElementById('miniFill').style.width = me.atMax ? '100%' : Math.round(me.intoLevel / me.levelSpan * 100) + '%';
+        document.getElementById('miniCard').hidden = false;
+      } catch {}
+    })();
+  </script>
 </body>
 </html>
