@@ -1,17 +1,10 @@
-const COOKIE = 'slsid';
+import { identify, applyIdentity } from './_identity.js';
+
 const TTL    = 60 * 60 * 24 * 120; // 120 days
 
 const PLAY_THRESHOLDS   = [1, 5, 10, 50];
 const STREAK_THRESHOLDS = [1, 5, 10, 50];
 const ALL_GAMES         = ['songquiz', 'chatter-quiz', 'words', 'spelling-bee'];
-
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
-
-function cookieHeader(sid) {
-  return `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
-}
 
 function qualifiedIds(stats) {
   const ids = [];
@@ -25,11 +18,12 @@ function qualifiedIds(stats) {
 }
 
 export async function onRequestGet({ request, env }) {
-  const sid = getSid(request);
-  if (!sid) return Response.json({ totalPlays: 0, streak: 0, longestStreak: 0 });
-  const stats = (await env.SONGLESS_KV.get(`global-stats-${sid}`, 'json'))
+  const ident   = await identify(request, env);
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
+  if (!ident.sid) return new Response(JSON.stringify({ totalPlays: 0, streak: 0, longestStreak: 0 }), { headers });
+  const stats = (await env.SONGLESS_KV.get(`global-stats-${ident.sid}`, 'json'))
     || { totalPlays: 0, streak: 0, longestStreak: 0, lastPlayDate: null };
-  return Response.json({ totalPlays: stats.totalPlays, streak: stats.streak, longestStreak: stats.longestStreak });
+  return new Response(JSON.stringify({ totalPlays: stats.totalPlays, streak: stats.streak, longestStreak: stats.longestStreak }), { headers });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -40,9 +34,9 @@ export async function onRequestPost({ request, env }) {
   const mode = body.mode === 'hard' ? 'hard' : 'normal';
   const lost = body.lost === true;
 
-  let sid = getSid(request);
-  const headers = { 'Content-Type': 'application/json' };
-  if (!sid) { sid = crypto.randomUUID(); headers['Set-Cookie'] = cookieHeader(sid); }
+  const ident = await identify(request, env, { create: true });
+  const sid   = ident.sid;
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
 
   const statsKey = `global-stats-${sid}`;
   const dedupKey = `global-played-${sid}-${date}-${game}-${mode}`;

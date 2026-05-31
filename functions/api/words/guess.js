@@ -1,17 +1,9 @@
 import { evaluate, getOrCreateWord } from './_words.js';
+import { identify, applyIdentity } from '../_identity.js';
 
-const COOKIE = 'slsid';
 const TTL    = 60 * 60 * 24 * 7;
 
 const MAX_GUESSES = { normal: 6, hard: 5 };
-
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
-
-function cookieHeader(sid) {
-  return `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
-}
 
 async function updateStats(date, mode, sid, guessNum, gameOver, won, env) {
   const suffix   = mode === 'hard' ? '-hard' : '';
@@ -64,9 +56,9 @@ export async function onRequestPost({ request, env }) {
   // ── Timeout / forfeit (hard mode timer expired) ──────────────────────────────
   if (timeout) {
     const answer = await getOrCreateWord(date, env, mode);
-    let sid = getSid(request);
-    const headers = { 'Content-Type': 'application/json' };
-    if (!sid) { sid = crypto.randomUUID(); headers['Set-Cookie'] = cookieHeader(sid); }
+    const ident = await identify(request, env, { create: true });
+    const sid   = ident.sid;
+    const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
 
     const stateKey = `words-state-${sid}-${date}-${mode}`;
     const state    = await env.SONGLESS_KV.get(stateKey, 'json')
@@ -93,12 +85,9 @@ export async function onRequestPost({ request, env }) {
 
   const answer = await getOrCreateWord(date, env, mode);
 
-  let sid = getSid(request);
-  const headers = { 'Content-Type': 'application/json' };
-  if (!sid) {
-    sid = crypto.randomUUID();
-    headers['Set-Cookie'] = cookieHeader(sid);
-  }
+  const ident = await identify(request, env, { create: true });
+  const sid   = ident.sid;
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
 
   const stateKey = `words-state-${sid}-${date}-${mode}`;
   const state    = await env.SONGLESS_KV.get(stateKey, 'json')

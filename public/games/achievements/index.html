@@ -111,6 +111,31 @@
 
     .seed-timer { text-align: center; font-size: 0.68rem; letter-spacing: 0.06em; color: var(--muted); padding-top: 1.25rem; border-top: 1px solid var(--border); }
     .seed-timer strong { color: var(--text); font-variant-numeric: tabular-nums; }
+
+    /* Profile / username card */
+    .profile-card { display: flex; align-items: center; gap: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; }
+    .profile-avatar { font-size: 2rem; line-height: 1; width: 3rem; height: 3rem; flex: none; display: flex; align-items: center; justify-content: center; background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px; }
+    .profile-main { flex: 1; min-width: 0; }
+    .profile-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+    .profile-name { font-size: 1.3rem; font-weight: 800; color: var(--text); word-break: break-word; }
+    .profile-edit { margin-top: 0.7rem; }
+    .profile-edit input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--border2); border-radius: 9px; color: var(--text); padding: 0.55rem 0.7rem; font-size: 1rem; outline: none; }
+    .profile-edit input:focus { border-color: var(--gold); }
+    .profile-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.55rem; }
+    .profile-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 9px; padding: 0.45rem 0.9rem; font-size: 0.85rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .profile-btn:hover { border-color: var(--gold); }
+    .profile-btn.primary { background: var(--gold); border-color: var(--gold); color: #1a1200; font-weight: 700; }
+    .profile-btn.primary:hover { filter: brightness(1.08); }
+    .profile-btn:disabled { opacity: 0.55; cursor: default; }
+    .profile-msg { margin-top: 0.45rem; font-size: 0.8rem; min-height: 1.1em; }
+    .profile-msg.err { color: #ef5350; }
+    .profile-msg.ok { color: #66bb6a; }
+    .profile-lockrow { margin-top: 0.7rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+    .profile-lock-state { font-size: 0.78rem; color: var(--muted); }
+    .profile-lock-state.locked { color: var(--gold); }
+    .profile-btn.lock { font-size: 0.8rem; }
+    .profile-lockrow .profile-msg { flex-basis: 100%; margin-top: 0.1rem; }
+    @media (max-width: 480px) { .profile-card { flex-wrap: wrap; } }
   </style>
 </head>
 <body>
@@ -120,6 +145,31 @@
     <h1>Achievements</h1>
     <p class="subtitle" id="progressLabel">Loading…</p>
   </header>
+
+  <section class="profile-card" id="profileCard">
+    <div class="profile-avatar">🙂</div>
+    <div class="profile-main">
+      <div class="profile-label">Your username</div>
+      <div class="profile-name" id="profileName">…</div>
+      <div class="profile-edit" id="profileEdit" hidden>
+        <input id="usernameInput" type="text" maxlength="16" placeholder="Choose a username"
+               autocomplete="off" autocapitalize="off" spellcheck="false">
+        <div class="profile-actions">
+          <button class="profile-btn primary" id="usernameSave">Save</button>
+          <button class="profile-btn" id="usernameRandom">Randomize</button>
+          <button class="profile-btn" id="usernameCancel">Cancel</button>
+        </div>
+        <div class="profile-msg" id="usernameMsg"></div>
+      </div>
+      <div class="profile-lockrow" id="lockRow" hidden>
+        <span class="profile-lock-state" id="lockState"></span>
+        <button class="profile-btn lock" id="lockBtn" hidden></button>
+        <button class="profile-btn" id="recoverBtn" hidden>Restore a locked profile</button>
+        <div class="profile-msg" id="lockMsg"></div>
+      </div>
+    </div>
+    <button class="profile-btn" id="usernameEditBtn">Edit</button>
+  </section>
 
   <div class="layout">
     <div class="main-col" id="achSections"></div>
@@ -148,6 +198,8 @@
   })();
 </script>
 
+<script src="/games/identity.js"></script>
+<script src="/games/passkey.js"></script>
 <script src="/games/achievements.js"></script>
 <script>
   const RANKS = [
@@ -280,6 +332,178 @@
   }
 
   init();
+</script>
+
+<script>
+  // ── Username editor ───────────────────────────────────────────────────────
+  (function () {
+    const nameEl   = document.getElementById('profileName');
+    const editWrap = document.getElementById('profileEdit');
+    const editBtn  = document.getElementById('usernameEditBtn');
+    const input    = document.getElementById('usernameInput');
+    const saveBtn  = document.getElementById('usernameSave');
+    const randBtn  = document.getElementById('usernameRandom');
+    const cancel   = document.getElementById('usernameCancel');
+    const msg      = document.getElementById('usernameMsg');
+    const lockRow   = document.getElementById('lockRow');
+    const lockState = document.getElementById('lockState');
+    const lockBtn   = document.getElementById('lockBtn');
+    const recoverBtn= document.getElementById('recoverBtn');
+    const lockMsg   = document.getElementById('lockMsg');
+
+    let current = { handle: '', custom: false, locked: false };
+    // A short-lived elevation token from a fresh passkey tap (sent on save).
+    let elevation = null;
+    let elevationExp = 0;
+
+    function showMsg(text, kind) {
+      msg.textContent = text || '';
+      msg.className = 'profile-msg' + (text ? ' ' + kind : '');
+    }
+    function showLockMsg(text, kind) {
+      lockMsg.textContent = text || '';
+      lockMsg.className = 'profile-msg' + (text ? ' ' + kind : '');
+    }
+    function openEdit() {
+      input.value = current.custom ? current.handle : '';
+      editWrap.hidden = false;
+      editBtn.hidden = true;
+      showMsg('');
+      input.focus();
+    }
+    function closeEdit() {
+      editWrap.hidden = true;
+      editBtn.hidden = false;
+      showMsg('');
+    }
+
+    async function load() {
+      try {
+        const r = await fetch('/api/profile');
+        current = await r.json();
+      } catch { current = { handle: '—', custom: false, locked: false }; }
+      nameEl.textContent = current.handle || '—';
+      renderLock();
+    }
+
+    function freshElevation() {
+      return elevation && Date.now() / 1000 < elevationExp - 5;
+    }
+
+    async function save(name) {
+      saveBtn.disabled = true;
+      randBtn.disabled = true;
+      showMsg('Saving…', 'ok');
+      try {
+        // Locked profile → require a fresh passkey tap before saving.
+        if (current.locked && !freshElevation()) {
+          showMsg('Verify with your passkey…', 'ok');
+          const { elevation: e } = await window.Passkey.elevate();
+          elevation = e;
+          elevationExp = parseInt(e.split('.')[0], 10);
+        }
+        const headers = { 'Content-Type': 'application/json' };
+        if (current.locked && elevation) headers['X-Elevation'] = elevation;
+
+        const r = await fetch('/api/profile', { method: 'POST', headers, body: JSON.stringify({ name }) });
+        const d = await r.json();
+        if (!r.ok) { showMsg(d.error || 'Could not save.', 'err'); return; }
+        current = { handle: d.handle, custom: d.custom, locked: d.locked };
+        nameEl.textContent = d.handle;
+        showMsg(d.custom ? 'Saved!' : 'Reset to a random name.', 'ok');
+        setTimeout(closeEdit, 800);
+      } catch (err) {
+        showMsg(err.message || 'Network error. Please try again.', 'err');
+      } finally {
+        saveBtn.disabled = false;
+        randBtn.disabled = false;
+      }
+    }
+
+    // ── Passkey lock UI ──────────────────────────────────────────────────────
+    async function renderLock() {
+      const Passkey = window.Passkey;
+      if (!Passkey || !Passkey.supported()) { lockRow.hidden = true; return; }
+
+      let st = { configured: false, locked: current.locked };
+      try { st = await Passkey.status(); } catch {}
+      if (!st.configured) { lockRow.hidden = true; return; }   // ID_SECRET not set yet
+
+      current.locked = st.locked;
+      lockRow.hidden = false;
+      showLockMsg('');
+
+      if (st.locked) {
+        lockState.textContent = '🔒 Profile locked with a passkey';
+        lockState.className = 'profile-lock-state locked';
+        lockBtn.textContent = 'Remove lock';
+        lockBtn.hidden = false;
+        recoverBtn.hidden = true;
+      } else {
+        lockState.textContent = '🔓 Not locked';
+        lockState.className = 'profile-lock-state';
+        lockBtn.textContent = 'Lock with a passkey';
+        lockBtn.hidden = false;
+        recoverBtn.hidden = false;
+      }
+    }
+
+    async function doLock() {
+      lockBtn.disabled = true;
+      showLockMsg('Follow your device prompt…', 'ok');
+      try {
+        await window.Passkey.lock();
+        showLockMsg('Profile locked! Changes now require your passkey.', 'ok');
+        await load();
+      } catch (err) {
+        showLockMsg(err.message || 'Could not lock.', 'err');
+      } finally {
+        lockBtn.disabled = false;
+      }
+    }
+
+    async function doUnlock() {
+      lockBtn.disabled = true;
+      showLockMsg('Verify with your passkey to unlock…', 'ok');
+      try {
+        await window.Passkey.unlock();
+        elevation = null;
+        showLockMsg('Lock removed.', 'ok');
+        await load();
+      } catch (err) {
+        showLockMsg(err.message || 'Could not unlock.', 'err');
+      } finally {
+        lockBtn.disabled = false;
+      }
+    }
+
+    async function doRecover() {
+      recoverBtn.disabled = true;
+      showLockMsg('Choose your passkey…', 'ok');
+      try {
+        await window.Passkey.recover(); // adopts the restored identity token
+        showLockMsg('Profile restored on this device!', 'ok');
+        await load();
+      } catch (err) {
+        showLockMsg(err.message || 'Could not restore.', 'err');
+      } finally {
+        recoverBtn.disabled = false;
+      }
+    }
+
+    editBtn.addEventListener('click', openEdit);
+    cancel.addEventListener('click', closeEdit);
+    saveBtn.addEventListener('click', () => save(input.value));
+    randBtn.addEventListener('click', () => save(''));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); save(input.value); }
+      if (e.key === 'Escape') closeEdit();
+    });
+    lockBtn.addEventListener('click', () => (current.locked ? doUnlock() : doLock()));
+    recoverBtn.addEventListener('click', doRecover);
+
+    load();
+  })();
 </script>
 </body>
 </html>

@@ -1,8 +1,5 @@
 import { getOrCreateWords } from './_words.js';
-
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
+import { identify, applyIdentity } from '../_identity.js';
 
 export async function onRequestGet({ request, env }) {
   const url  = new URL(request.url);
@@ -14,8 +11,9 @@ export async function onRequestGet({ request, env }) {
   const words  = await getOrCreateWords(date, env, mode);
   const seed   = await env.SONGLESS_KV.get(`spelling-seed${suffix}-${date}`);
 
-  const sid   = getSid(request);
-  const state = sid ? await env.SONGLESS_KV.get(`spelling-state-${sid}-${date}-${mode}`, 'json') : null;
+  const ident   = await identify(request, env);
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
+  const state = ident.sid ? await env.SONGLESS_KV.get(`spelling-state-${ident.sid}-${date}-${mode}`, 'json') : null;
   const answers = state?.answers || [];
 
   // Only reveal the spelling for questions the player has already answered
@@ -26,12 +24,12 @@ export async function onRequestGet({ request, env }) {
       : { index: i, difficulty: w.difficulty, answered: false };
   });
 
-  return Response.json({
+  return new Response(JSON.stringify({
     seed,
     mode,
     total:    words.length,
     current:  state?.current ?? answers.filter(Boolean).length,
     gameOver: state?.gameOver ?? false,
     questions,
-  });
+  }), { headers });
 }

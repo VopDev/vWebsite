@@ -1,13 +1,6 @@
-﻿const COOKIE = 'slsid';
+﻿import { identify, applyIdentity } from '../_identity.js';
+
 const TTL    = 60 * 60 * 24 * 35;
-
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
-
-function cookieHeader(sid) {
-  return `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
-}
 
 export async function onRequestGet({ request, env }) {
   const url  = new URL(request.url);
@@ -15,24 +8,22 @@ export async function onRequestGet({ request, env }) {
   const mode = url.searchParams.get('mode') || 'normal';
   if (!date) return new Response('Bad request', { status: 400 });
 
-  const sid = getSid(request);
-  if (!sid) return Response.json(null);
+  const ident   = await identify(request, env);
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
+  if (!ident.sid) return new Response('null', { headers });
 
-  const data = await env.SONGLESS_KV.get(`state-${sid}-${date}-${mode}`, 'json');
-  return Response.json(data);
+  const data = await env.SONGLESS_KV.get(`state-${ident.sid}-${date}-${mode}`, 'json');
+  return new Response(JSON.stringify(data ?? null), { headers });
 }
 
 export async function onRequestPost({ request, env }) {
   const { date, state, mode = 'normal' } = await request.json();
   if (!date || !state) return new Response('Bad request', { status: 400 });
 
-  let sid = getSid(request);
-  const headers = {};
-  const isNew = !sid;
-  if (isNew) {
-    sid = crypto.randomUUID();
-    headers['Set-Cookie'] = cookieHeader(sid);
-
+  const ident = await identify(request, env, { create: true });
+  const sid   = ident.sid;
+  const headers = applyIdentity({}, ident);
+  if (ident.isNew) {
     const pk    = `players-${date}`;
     const count = parseInt(await env.SONGLESS_KV.get(pk) || '0', 10);
     await env.SONGLESS_KV.put(pk, String(count + 1));
@@ -46,7 +37,7 @@ export async function onRequestPost({ request, env }) {
 }
 
 export async function onRequestDelete({ request, env }) {
-  const sid = getSid(request);
+  const { sid } = await identify(request, env);
   if (!sid) return new Response('OK', { status: 200 });
 
   const url  = new URL(request.url);

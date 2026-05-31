@@ -1,35 +1,26 @@
-﻿const COOKIE = 'slsid';
+﻿import { identify, applyIdentity } from '../_identity.js';
+
 const TTL    = 60 * 60 * 24 * 7;
-
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
-
-function cookieHeader(sid) {
-  return `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
-}
 
 export async function onRequestGet({ request, env }) {
   const date = new URL(request.url).searchParams.get('date');
   if (!date) return new Response('Bad request', { status: 400 });
 
-  const sid = getSid(request);
-  if (!sid) return Response.json(null);
+  const ident   = await identify(request, env);
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
+  if (!ident.sid) return new Response('null', { headers });
 
-  const data = await env.SONGLESS_KV.get(`cq-state-${sid}-${date}`, 'json');
-  return Response.json(data ? { ...data, sid } : { sid });
+  const data = await env.SONGLESS_KV.get(`cq-state-${ident.sid}-${date}`, 'json');
+  return new Response(JSON.stringify(data ? { ...data, sid: ident.sid } : { sid: ident.sid }), { headers });
 }
 
 export async function onRequestPost({ request, env }) {
   const { date, state } = await request.json();
   if (!date || !state) return new Response('Bad request', { status: 400 });
 
-  let sid = getSid(request);
-  const headers = {};
-  if (!sid) {
-    sid = crypto.randomUUID();
-    headers['Set-Cookie'] = cookieHeader(sid);
-  }
+  const ident = await identify(request, env, { create: true });
+  const sid   = ident.sid;
+  const headers = applyIdentity({}, ident);
 
   await env.SONGLESS_KV.put(`cq-state-${sid}-${date}`, JSON.stringify(state), {
     expirationTtl: TTL,

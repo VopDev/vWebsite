@@ -1,4 +1,6 @@
-﻿function generateSeed() {
+﻿import { identify, applyIdentity } from '../_identity.js';
+
+function generateSeed() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   const arr   = new Uint8Array(16);
   crypto.getRandomValues(arr);
@@ -21,6 +23,7 @@ export async function onRequestGet({ request, env }) {
     await env.SONGLESS_KV.put(`songquiz-seed-${date}`, seed, { expirationTtl: 60 * 60 * 24 * 7 });
   }
 
-  const sid = request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-  return Response.json({ seedOffset, seed, sid });
+  const ident   = await identify(request, env);
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
+  return new Response(JSON.stringify({ seedOffset, seed, sid: ident.sid }), { headers });
 }

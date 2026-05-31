@@ -1,18 +1,11 @@
-const COOKIE = 'slsid';
-
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
-
-function cookieHeader(sid) {
-  return `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
-}
+import { identify, applyIdentity } from '../_identity.js';
 
 export async function onRequestGet({ request, env }) {
-  const sid = getSid(request);
-  if (!sid) return Response.json([]);
-  const data = (await env.SONGLESS_KV.get(`achievements-${sid}`, 'json')) || [];
-  return Response.json(data);
+  const ident   = await identify(request, env);
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
+  if (!ident.sid) return new Response('[]', { headers });
+  const data = (await env.SONGLESS_KV.get(`achievements-${ident.sid}`, 'json')) || [];
+  return new Response(JSON.stringify(data), { headers });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -23,9 +16,9 @@ export async function onRequestPost({ request, env }) {
   if (!valid.length) return new Response('Bad request', { status: 400 });
 
   // Mint a session if the visitor doesn't have one yet (e.g. achievements page eggs)
-  let sid = getSid(request);
-  const headers = { 'Content-Type': 'application/json' };
-  if (!sid) { sid = crypto.randomUUID(); headers['Set-Cookie'] = cookieHeader(sid); }
+  const ident = await identify(request, env, { create: true });
+  const sid   = ident.sid;
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
 
   const data     = (await env.SONGLESS_KV.get(`achievements-${sid}`, 'json')) || [];
   const existing = new Set(data.map(a => a.id));

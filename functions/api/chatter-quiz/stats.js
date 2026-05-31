@@ -1,9 +1,6 @@
-﻿const COOKIE = 'slsid';
-const TTL    = 60 * 60 * 24 * 30;
+﻿import { identify } from '../_identity.js';
 
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
+const TTL    = 60 * 60 * 24 * 30;
 
 function emptyStats() {
   return {
@@ -28,7 +25,7 @@ export async function onRequestGet({ request, env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const sid  = getSid(request);
+  const { sid } = await identify(request, env);
   const body = await request.json().catch(() => null);
   if (!body?.date) return new Response('Bad request', { status: 400 });
 

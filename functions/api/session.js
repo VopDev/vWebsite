@@ -1,18 +1,9 @@
-const COOKIE = 'slsid';
+import { identify, applyIdentity, getHandle } from './_identity.js';
 
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
+export async function onRequestGet({ request, env }) {
+  const ident   = await identify(request, env, { create: true });
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
+  const handle  = await getHandle(env, ident.sid);
 
-export async function onRequestGet({ request }) {
-  let sid = getSid(request);
-  const headers = { 'Content-Type': 'application/json' };
-
-  if (!sid) {
-    sid = crypto.randomUUID();
-    headers['Set-Cookie'] =
-      `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
-  }
-
-  return new Response(JSON.stringify({ sid }), { headers });
+  return new Response(JSON.stringify({ sid: ident.sid, handle }), { headers });
 }

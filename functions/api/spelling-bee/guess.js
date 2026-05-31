@@ -1,14 +1,7 @@
 import { getOrCreateWords, normalize } from './_words.js';
+import { identify, applyIdentity } from '../_identity.js';
 
-const COOKIE = 'slsid';
 const TTL    = 60 * 60 * 24 * 7;
-
-function getSid(request) {
-  return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
-}
-function cookieHeader(sid) {
-  return `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
-}
 
 function emptyStats() {
   return {
@@ -59,9 +52,9 @@ export async function onRequestPost({ request, env }) {
   const words = await getOrCreateWords(date, env, mode);
   if (index < 0 || index >= words.length) return new Response('Bad request', { status: 400 });
 
-  let sid = getSid(request);
-  const headers = { 'Content-Type': 'application/json' };
-  if (!sid) { sid = crypto.randomUUID(); headers['Set-Cookie'] = cookieHeader(sid); }
+  const ident = await identify(request, env, { create: true });
+  const sid   = ident.sid;
+  const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
 
   const stateKey = `spelling-state-${sid}-${date}-${mode}`;
   const state    = await env.SONGLESS_KV.get(stateKey, 'json') || { answers: [], current: 0, gameOver: false };
