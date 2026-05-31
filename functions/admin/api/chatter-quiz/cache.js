@@ -1,4 +1,4 @@
-export async function onRequestGet({ request, env }) {
+﻿export async function onRequestGet({ request, env }) {
   const url  = new URL(request.url);
   const sid  = url.searchParams.get('sid');
   const date = url.searchParams.get('date');

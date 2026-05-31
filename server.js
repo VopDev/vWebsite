@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
@@ -26,8 +26,8 @@ fs.watch(publicDir, { recursive: true }, (eventType, filename) => {
   });
 });
 
-// ── Songless stats API ────────────────────────────────────────────────────────
-const STATS_FILE = path.join(__dirname, 'data', 'songless-stats.json');
+// ── SongQuiz stats API ────────────────────────────────────────────────────────
+const STATS_FILE = path.join(__dirname, 'data', 'SongQuiz-stats.json');
 
 function readStats() {
   try {
@@ -46,7 +46,7 @@ const EMPTY_SLOT = () => ({ '1':0,'2':0,'3':0,'4':0,'5':0,'6':0,'fail':0 });
 
 app.use(express.json());
 
-app.post('/api/songless/result', (req, res) => {
+app.post('/api/songquiz/result', (req, res) => {
   const { date, slot, guessCount, won } = req.body;
   if (!date || slot == null || guessCount == null || won == null)
     return res.status(400).json({ error: 'missing fields' });
@@ -61,7 +61,7 @@ app.post('/api/songless/result', (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/songless/stats', (req, res) => {
+app.get('/api/songquiz/stats', (req, res) => {
   const { date, slot } = req.query;
   const stats    = readStats();
   const slotData = stats[date]?.[slot] ?? EMPTY_SLOT();
@@ -69,7 +69,7 @@ app.get('/api/songless/stats', (req, res) => {
   res.json({ ...slotData, total });
 });
 
-app.delete('/api/songless/stats', (req, res) => {
+app.delete('/api/songquiz/stats', (req, res) => {
   const { date } = req.query;
   if (!date) return res.status(400).json({ error: 'missing date' });
   const stats = readStats();

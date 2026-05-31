@@ -1,4 +1,4 @@
-const CORS = { 'Content-Type': 'application/json' };
+﻿const CORS = { 'Content-Type': 'application/json' };
 
 export async function onRequestGet({ request, env }) {
   const url  = new URL(request.url);

@@ -1,4 +1,4 @@
-function generateSeed() {
+﻿function generateSeed() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   const arr   = new Uint8Array(16);
   crypto.getRandomValues(arr);
@@ -16,7 +16,7 @@ export async function onRequestPost({ request, env }) {
 
   await Promise.all([
     env.SONGLESS_KV.put(offsetKey, String(next)),
-    env.SONGLESS_KV.put(`songless-seed-${date}`, seed, { expirationTtl: 60 * 60 * 24 * 7 }),
+    env.SONGLESS_KV.put(`songquiz-seed-${date}`, seed, { expirationTtl: 60 * 60 * 24 * 7 }),
   ]);
 
   // Keep the dates index in sync with the new seed offset

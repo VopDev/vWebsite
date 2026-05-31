@@ -1,4 +1,4 @@
-function getSid(request) {
+﻿function getSid(request) {
   return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
 }
 

@@ -1,16 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vop's Songless — Daily Music Game</title>
-  <link rel="stylesheet" href="/games/songless/style.css" />
+  <title>Vop's SongQuiz — Daily Music Game</title>
+  <link rel="stylesheet" href="/games/songquiz/style.css" />
 </head>
 <body>
 <div class="page">
   <header>
     <a href="/games/" class="back-link">← Games</a>
-    <h1>Vop's Songless</h1>
+    <h1>Vop's SongQuiz</h1>
     <div class="header-row">
       <p class="subtitle">Guess today's 5 songs · 6 tries each</p>
       <div style="display:flex;align-items:center;gap:0.5rem">
@@ -89,6 +89,7 @@
       <p class="next-label" id="nextLabel"></p>
     </div>
   </div>
+  <div class="seed-timer">New seed in <strong id="seedTimerVal">…</strong></div>
 </div>
 
 <!-- Stats popup modal -->
@@ -104,7 +105,6 @@
 
 
 <div id="toastContainer"></div>
-<div class="seed-timer">New seed in <strong id="seedTimerVal">…</strong></div>
 <script>
   (function() {
     function tick() {

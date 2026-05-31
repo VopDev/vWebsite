@@ -91,7 +91,27 @@
   </header>
 
   <div id="achSections" style="display:flex;flex-direction:column;gap:0.75rem"></div>
+
+  <div style="text-align:center;font-size:0.68rem;letter-spacing:0.06em;color:var(--muted);padding-top:1.25rem;border-top:1px solid var(--border);margin-top:0.5rem">
+    New seed in <strong id="seedTimerVal" style="color:var(--text);font-variant-numeric:tabular-nums">…</strong>
+  </div>
 </div>
+<script>
+  (function() {
+    function tick() {
+      const now = Date.now();
+      const next = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
+      const ms = next - now;
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      document.getElementById('seedTimerVal').textContent =
+        `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+</script>
 
 <script src="/games/achievements.js"></script>
 <script>

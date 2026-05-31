@@ -1,4 +1,4 @@
-export async function onRequestPost({ request, env }) {
+﻿export async function onRequestPost({ request, env }) {
   try {
     const { date, slot, guessCount, won, mode = 'normal' } = await request.json();
 

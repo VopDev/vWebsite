@@ -1,4 +1,4 @@
-﻿const COOKIE = 'slsid';
+const COOKIE = 'slsid';
 const TTL    = 60 * 60 * 24 * 7;
 
 function getSid(request) {
@@ -12,12 +12,10 @@ function cookieHeader(sid) {
 export async function onRequestGet({ request, env }) {
   const date = new URL(request.url).searchParams.get('date');
   if (!date) return new Response('Bad request', { status: 400 });
-
-  const sid = getSid(request);
-  if (!sid) return Response.json(null);
-
-  const data = await env.SONGLESS_KV.get(`cq-state-${sid}-${date}`, 'json');
-  return Response.json(data ? { ...data, sid } : { sid });
+  const sid  = getSid(request);
+  if (!sid)  return Response.json(null);
+  const data = await env.SONGLESS_KV.get(`words-state-${sid}-${date}`, 'json');
+  return Response.json(data);
 }
 
 export async function onRequestPost({ request, env }) {
@@ -31,7 +29,7 @@ export async function onRequestPost({ request, env }) {
     headers['Set-Cookie'] = cookieHeader(sid);
   }
 
-  await env.SONGLESS_KV.put(`cq-state-${sid}-${date}`, JSON.stringify(state), {
+  await env.SONGLESS_KV.put(`words-state-${sid}-${date}`, JSON.stringify(state), {
     expirationTtl: TTL,
   });
 

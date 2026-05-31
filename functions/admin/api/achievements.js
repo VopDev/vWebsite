@@ -1,4 +1,4 @@
-export async function onRequestGet({ env }) {
+﻿export async function onRequestGet({ env }) {
   // List all achievement keys and return each player's unlocked achievements
   const players = [];
   let cursor;

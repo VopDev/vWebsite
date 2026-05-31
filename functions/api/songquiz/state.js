@@ -1,4 +1,4 @@
-const COOKIE = 'slsid';
+﻿const COOKIE = 'slsid';
 const TTL    = 60 * 60 * 24 * 35;
 
 function getSid(request) {

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -153,9 +153,9 @@
 
     <div class="games-grid">
       <div class="game-card">
-        <a href="/games/songless/" class="game-card-link">
+        <a href="/games/songquiz/" class="game-card-link">
           <div class="game-icon">🎵</div>
-          <h2>Songless</h2>
+          <h2>SongQuiz</h2>
           <p>Guess the song from a short audio clip. Six tries, each revealing a little more.</p>
         </a>
         <div class="card-footer">
@@ -178,6 +178,16 @@
         </div>
       </div>
       <div class="game-card">
+        <a href="/games/words/" class="game-card-link">
+          <div class="game-icon">🔡</div>
+          <h2>Words</h2>
+          <p>Guess the hidden 5-letter word in 6 tries. Green means right spot, yellow means wrong spot.</p>
+        </a>
+        <div class="card-footer">
+          <span class="badge">Daily</span>
+        </div>
+      </div>
+      <div class="game-card">
         <a href="/games/achievements/" class="game-card-link">
           <div class="game-icon">🏆</div>
           <h2>Achievements</h2>
@@ -190,7 +200,7 @@
     </div>
   </div>
 
-  <div style="position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:0.68rem;letter-spacing:0.06em;color:#666;padding:0.55rem 1rem;background:#0a0a0a;border-top:1px solid #222;z-index:50">
+  <div style="text-align:center;font-size:0.68rem;letter-spacing:0.06em;color:#666;padding-top:1.25rem;border-top:1px solid #222;margin-top:0.5rem">
     New seed in <strong id="seedTimerVal" style="color:#f0f0f0;font-variant-numeric:tabular-nums">…</strong>
   </div>
 
@@ -211,9 +221,9 @@
     })();
 
     const toggle = document.getElementById('hardModeToggle');
-    toggle.checked = localStorage.getItem('songless-hard') === '1';
+    toggle.checked = localStorage.getItem('songquiz-hard') === '1';
     toggle.addEventListener('change', () => {
-      localStorage.setItem('songless-hard', toggle.checked ? '1' : '0');
+      localStorage.setItem('songquiz-hard', toggle.checked ? '1' : '0');
     });
     // Prevent toggle click from triggering card navigation
     document.getElementById('hardModeLabel').addEventListener('click', e => e.stopPropagation());

@@ -1,22 +1,22 @@
-const ALL_ACHIEVEMENTS = [
-  // ── Songless ──────────────────────────────────────────────────────────────
-  { id: 'songless_first',      game: 'Songless', icon: '🎵', title: 'First Note',      desc: 'Win your first Songless song' },
-  { id: 'songless_sweep',      game: 'Songless', icon: '🏆', title: 'Sweep',            desc: 'Win all 5 songs in a single day' },
-  { id: 'songless_perfect',    game: 'Songless', icon: '🎯', title: 'Perfect Pitch',    desc: 'Guess a song on the very first clip' },
-  { id: 'songless_no_skip',    game: 'Songless', icon: '⭐', title: 'No Filler',        desc: 'Win a song without ever skipping' },
-  { id: 'songless_hard_win',   game: 'Songless', icon: '🔥', title: 'Hard Ears',        desc: 'Win any song in Hard Mode' },
-  { id: 'songless_hard_first', game: 'Songless', icon: '⚡', title: 'Superhuman',       desc: 'Guess correctly on clip 1 in Hard Mode' },
-  { id: 'songless_beat_clock', game: 'Songless', icon: '⏱️', title: 'Beat the Clock',   desc: 'Guess correctly with 15+ seconds left on the timer' },
-  { id: 'songless_3_streak',   game: 'Songless', icon: '🎶', title: 'Hat Trick',        desc: 'Win 3 songs in a row in one session' },
-  { id: 'songless_quick',      game: 'Songless', icon: '💡', title: 'Quick Ears',       desc: 'Guess a song correctly in 2 tries or fewer' },
-  { id: 'songless_clutch',     game: 'Songless', icon: '🎲', title: 'Clutch',           desc: 'Guess a song correctly on the very last clip' },
-  { id: 'songless_hard_sweep', game: 'Songless', icon: '💀', title: 'Untouchable',      desc: 'Win all 5 songs in Hard Mode in one day' },
-  { id: 'songless_no_skip_day',game: 'Songless', icon: '🤐', title: 'Purist',           desc: 'Complete all 5 songs in a day without a single skip' },
-  { id: 'songless_comeback',   game: 'Songless', icon: '🔄', title: 'Never Give Up',    desc: 'Win a song after guessing wrong 4 or more times' },
-  { id: 'songless_early_bird', game: 'Songless', icon: '🐦', title: 'Early Bird',       desc: 'Win the very first song of the day' },
-  { id: 'songless_2x_perfect', game: 'Songless', icon: '🎯', title: 'Audiophile',       desc: 'Guess 2 different songs on the first clip in one day' },
-  { id: 'songless_hard_clutch',game: 'Songless', icon: '⏰', title: 'Photo Finish',     desc: 'Win a song in Hard Mode with 5 or fewer seconds left' },
-  { id: 'songless_full_day',   game: 'Songless', icon: '✅', title: 'Completionist',    desc: 'Attempt all 5 songs in a single day' },
+﻿const ALL_ACHIEVEMENTS = [
+  // ── SongQuiz ──────────────────────────────────────────────────────────────
+  { id: 'songless_first',      game: 'SongQuiz', icon: '🎵', title: 'First Note',      desc: 'Win your first SongQuiz song' },
+  { id: 'songless_sweep',      game: 'SongQuiz', icon: '🏆', title: 'Sweep',            desc: 'Win all 5 songs in a single day' },
+  { id: 'songless_perfect',    game: 'SongQuiz', icon: '🎯', title: 'Perfect Pitch',    desc: 'Guess a song on the very first clip' },
+  { id: 'songless_no_skip',    game: 'SongQuiz', icon: '⭐', title: 'No Filler',        desc: 'Win a song without ever skipping' },
+  { id: 'songless_hard_win',   game: 'SongQuiz', icon: '🔥', title: 'Hard Ears',        desc: 'Win any song in Hard Mode' },
+  { id: 'songless_hard_first', game: 'SongQuiz', icon: '⚡', title: 'Superhuman',       desc: 'Guess correctly on clip 1 in Hard Mode' },
+  { id: 'songless_beat_clock', game: 'SongQuiz', icon: '⏱️', title: 'Beat the Clock',   desc: 'Guess correctly with 15+ seconds left on the timer' },
+  { id: 'songless_3_streak',   game: 'SongQuiz', icon: '🎶', title: 'Hat Trick',        desc: 'Win 3 songs in a row in one session' },
+  { id: 'songless_quick',      game: 'SongQuiz', icon: '💡', title: 'Quick Ears',       desc: 'Guess a song correctly in 2 tries or fewer' },
+  { id: 'songless_clutch',     game: 'SongQuiz', icon: '🎲', title: 'Clutch',           desc: 'Guess a song correctly on the very last clip' },
+  { id: 'songless_hard_sweep', game: 'SongQuiz', icon: '💀', title: 'Untouchable',      desc: 'Win all 5 songs in Hard Mode in one day' },
+  { id: 'songless_no_skip_day',game: 'SongQuiz', icon: '🤐', title: 'Purist',           desc: 'Complete all 5 songs in a day without a single skip' },
+  { id: 'songless_comeback',   game: 'SongQuiz', icon: '🔄', title: 'Never Give Up',    desc: 'Win a song after guessing wrong 4 or more times' },
+  { id: 'songless_early_bird', game: 'SongQuiz', icon: '🐦', title: 'Early Bird',       desc: 'Win the very first song of the day' },
+  { id: 'songless_2x_perfect', game: 'SongQuiz', icon: '🎯', title: 'Audiophile',       desc: 'Guess 2 different songs on the first clip in one day' },
+  { id: 'songless_hard_clutch',game: 'SongQuiz', icon: '⏰', title: 'Photo Finish',     desc: 'Win a song in Hard Mode with 5 or fewer seconds left' },
+  { id: 'songless_full_day',   game: 'SongQuiz', icon: '✅', title: 'Completionist',    desc: 'Attempt all 5 songs in a single day' },
 
   // ── xQc Chatter Quiz ─────────────────────────────────────────────────────
   { id: 'chatquiz_first',       game: 'xQc Chatter Quiz', icon: '💬', title: 'Chat Regular',    desc: 'Get your first Chatter Quiz question correct' },
@@ -35,4 +35,15 @@ const ALL_ACHIEVEMENTS = [
   { id: 'chatquiz_scholar',     game: 'xQc Chatter Quiz', icon: '📚', title: 'Scholar',         desc: 'Finish with 9 out of 10 correct' },
   { id: 'chatquiz_hot_start',   game: 'xQc Chatter Quiz', icon: '🚀', title: 'Hot Start',       desc: 'Get the first 5 questions correct in a row' },
   { id: 'chatquiz_no_hints',    game: 'xQc Chatter Quiz', icon: '🧠', title: 'Pure Instinct',   desc: 'Complete a full quiz without using any hints' },
+
+  // ── Words ─────────────────────────────────────────────────────────────────
+  { id: 'words_first',     game: 'Words', icon: '🟩', title: 'First Word',   desc: 'Win your first Words game' },
+  { id: 'words_genius',    game: 'Words', icon: '🧠', title: 'Genius',       desc: 'Guess the word on the very first try' },
+  { id: 'words_quick',     game: 'Words', icon: '⚡', title: 'Sharp Mind',   desc: 'Guess the word in 2 tries' },
+  { id: 'words_wordsmith', game: 'Words', icon: '🏆', title: 'Wordsmith',    desc: 'Win in 3 or fewer guesses' },
+  { id: 'words_comeback',  game: 'Words', icon: '🎲', title: 'Last Chance',  desc: 'Win on the 6th and final guess' },
+  { id: 'words_lightning', game: 'Words', icon: '⏱️', title: 'Lightning',    desc: 'Guess the word in under 45 seconds' },
+  { id: 'words_hot_start', game: 'Words', icon: '🔥', title: 'Hot Start',    desc: 'Get 3+ matching letters on your first guess' },
+  { id: 'words_bull_eye',  game: 'Words', icon: '🎯', title: "Bull's Eye",   desc: 'Get the first letter correct on your opening guess' },
+  { id: 'words_no_miss',   game: 'Words', icon: '✨', title: 'Surgical',     desc: 'Win using only letters that appear in the answer' },
 ];

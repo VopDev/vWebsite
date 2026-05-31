@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Songless Admin</title>
+  <title>SongQuiz Admin</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -86,7 +86,7 @@
 <div class="page">
   <header style="display:flex;flex-direction:column;gap:0.4rem">
     <a href="/admin/" class="back">← Admin</a>
-    <h1>Songless Admin</h1>
+    <h1>SongQuiz Admin</h1>
   </header>
 
   <!-- Mode + Date picker -->
@@ -154,7 +154,7 @@
   </section>
 </div>
 
-<script src="/games/songless/songs.js"></script>
+<script src="/games/songquiz/songs.js"></script>
 <script>
   const DAILY_COUNT = 5;
 
@@ -217,7 +217,7 @@
 
   async function loadSeed(dateStr) {
     try {
-      const cfg  = await fetch(`/api/songless/config?date=${dateStr}`).then(r => r.json());
+      const cfg  = await fetch(`/api/songquiz/config?date=${dateStr}`).then(r => r.json());
       const el   = document.getElementById('seedDisplay');
       el.textContent = cfg.seed ? cfg.seed.match(/.{4}/g).join(' ') : '';
     } catch {}
@@ -278,7 +278,7 @@
     const songs  = getSongsForDate(dateStr, entry?.seedOffset ?? 0, selectedMode === 'hard');
 
     const slots = await Promise.all(
-      songs.map((_, i) => fetch(`/api/songless/stats?date=${dateStr}&slot=${i}&mode=${selectedMode}`).then(r => r.json()).catch(() => null))
+      songs.map((_, i) => fetch(`/api/songquiz/stats?date=${dateStr}&slot=${i}&mode=${selectedMode}`).then(r => r.json()).catch(() => null))
     );
     document.getElementById('statsView').innerHTML = slots.map((stats, i) => {
       if (!stats) return `<div class="stat-card"><div class="stat-title">Song ${i+1} — no data</div></div>`;
@@ -332,7 +332,7 @@
     try { idx = await fetch('/admin/api/dates').then(r => r.json()); } catch {}
 
     // Always include today, even if no stats yet
-    const todayCfg = await fetch(`/api/songless/config?date=${TODAY}`).then(r => r.json()).catch(() => ({ seedOffset: 0 }));
+    const todayCfg = await fetch(`/api/songquiz/config?date=${TODAY}`).then(r => r.json()).catch(() => ({ seedOffset: 0 }));
     if (!idx.find(d => d.date === TODAY)) idx.unshift({ date: TODAY, seedOffset: todayCfg.seedOffset || 0 });
     else idx.find(d => d.date === TODAY).seedOffset = todayCfg.seedOffset || 0;
 
@@ -366,7 +366,7 @@
   document.getElementById('clearStatsBtn').addEventListener('click', async () => {
     if (!confirm(`Clear all stats for ${selectedDate}?`)) return;
     try {
-      await fetch(`/api/songless/stats?date=${selectedDate}&mode=${selectedMode}`, { method: 'DELETE' });
+      await fetch(`/api/songquiz/stats?date=${selectedDate}&mode=${selectedMode}`, { method: 'DELETE' });
       loadAnalytics(selectedDate);
       loadStats(selectedDate);
       setMsg('Stats cleared.', 'ok');
@@ -406,7 +406,7 @@
     if (!sid) { setLookupMsg('Enter a session ID.', 'err'); return; }
     currentLookupSid = sid;
     try {
-      const data = await fetch(`/admin/api/songless/player?sid=${encodeURIComponent(sid)}&date=${TODAY}`).then(r => r.json());
+      const data = await fetch(`/admin/api/songquiz/player?sid=${encodeURIComponent(sid)}&date=${TODAY}`).then(r => r.json());
       const normal = data.normal, hard = data.hard, achs = data.achievements || [];
       const lines = [];
       if (normal) lines.push(`Normal: song ${(normal.slot ?? 0) + 1}/5, ${normal.games?.filter(g => g.won).length ?? 0} won`);
@@ -422,7 +422,7 @@
   document.getElementById('resetPlayerStateBtn').addEventListener('click', async () => {
     if (!currentLookupSid || !confirm('Reset this player\'s game state for today?')) return;
     try {
-      await fetch(`/admin/api/songless/player?sid=${encodeURIComponent(currentLookupSid)}&date=${TODAY}`, { method: 'DELETE' });
+      await fetch(`/admin/api/songquiz/player?sid=${encodeURIComponent(currentLookupSid)}&date=${TODAY}`, { method: 'DELETE' });
       setLookupMsg('Game state reset.', 'ok');
       document.getElementById('playerInfo').style.display = 'none';
     } catch { setLookupMsg('Failed.', 'err'); }

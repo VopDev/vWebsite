@@ -1,4 +1,4 @@
-// SONGS is defined in songs.js, loaded before this file
+﻿// SONGS is defined in songs.js, loaded before this file
 
 const CLIPS       = [0.1, 0.5, 1, 3, 8, 15];
 const MAX_GUESSES = 6;
@@ -83,7 +83,7 @@ let selected  = null;
 let resultAudio     = null;
 let resultAudioSlot = -1;
 
-let hardMode         = localStorage.getItem('songless-hard') === '1';
+let hardMode         = localStorage.getItem('songquiz-hard') === '1';
 const MODE           = hardMode ? 'hard' : 'normal';
 let hardTimerInterval = null;
 let hardTimeLeft      = 30;
@@ -95,7 +95,7 @@ function curSong() { return SONGS_TODAY[state.slot]; }
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 function save() {
-  fetch('/api/songless/state', {
+  fetch('/api/songquiz/state', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ date: TODAY, state, mode: MODE }),
@@ -104,7 +104,7 @@ function save() {
 
 async function load() {
   try {
-    const res = await fetch(`/api/songless/state?date=${TODAY}&mode=${MODE}`);
+    const res = await fetch(`/api/songquiz/state?date=${TODAY}&mode=${MODE}`);
     const s   = await res.json();
     if (s && Array.isArray(s.games) && s.games.length === DAILY_COUNT) {
       state = s;
@@ -256,7 +256,7 @@ function closeStatsModal() {
 async function submitThenFetch(slot, game) {
   if (!state.submitted[slot]) {
     try {
-      await fetch('/api/songless/result', {
+      await fetch('/api/songquiz/result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: TODAY, slot, guessCount: game.timedOut ? MAX_GUESSES : game.guesses.length, won: game.won, mode: MODE }),
@@ -267,7 +267,7 @@ async function submitThenFetch(slot, game) {
   }
 
   try {
-    const res = await fetch(`/api/songless/stats?date=${TODAY}&slot=${slot}&mode=${MODE}`);
+    const res = await fetch(`/api/songquiz/stats?date=${TODAY}&slot=${slot}&mode=${MODE}`);
     const data = await res.json();
     statsCache[slot] = data;
     return data;
@@ -733,7 +733,7 @@ function setupEvents() {
   document.getElementById('shareBtn').addEventListener('click', () => {
     const g   = curGame();
     const cnt = g.won ? g.guesses.length : 'X';
-    const txt = `Songless ${TODAY} · Song ${state.slot + 1}/${DAILY_COUNT}\n${cnt}/${MAX_GUESSES}\n\n${emojiRow(g)}\n\nvopori.dev/games/songless/`;
+    const txt = `SongQuiz ${TODAY} · Song ${state.slot + 1}/${DAILY_COUNT}\n${cnt}/${MAX_GUESSES}\n\n${emojiRow(g)}\n\nvopori.dev/games/songquiz/`;
     copyText(document.getElementById('shareBtn'), txt);
   });
 
@@ -742,7 +742,7 @@ function setupEvents() {
     const rows = state.games.map((g, i) =>
       `Song ${i+1}: ${emojiRow(g)} (${guessCount(g)})`
     ).join('\n');
-    const txt = `Songless ${TODAY}\n${wonCount}/${DAILY_COUNT} songs\n\n${rows}\n\nvopori.dev/games/songless/`;
+    const txt = `SongQuiz ${TODAY}\n${wonCount}/${DAILY_COUNT} songs\n\n${rows}\n\nvopori.dev/games/songquiz/`;
     copyText(document.getElementById('shareAllBtn'), txt);
   });
 
@@ -777,7 +777,7 @@ async function init() {
 
   // Resolve today's seed offset (admin may have shuffled) before picking songs
   try {
-    const cfg = await fetch(`/api/songless/config?date=${TODAY}`).then(r => r.json());
+    const cfg = await fetch(`/api/songquiz/config?date=${TODAY}`).then(r => r.json());
     SONGS_TODAY = getDailySongs(cfg.seedOffset || 0);
     if (cfg.seed) initSeedWidget(cfg.seed);
   } catch {
