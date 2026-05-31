@@ -124,8 +124,11 @@
   <!-- Player Lookup -->
   <section>
     <h2>Player Lookup</h2>
+    <select id="sidSelect" style="width:100%;background:#1a1a1a;border:1px solid var(--border2);border-radius:7px;padding:0.5rem 0.75rem;color:var(--text);font-size:0.78rem;font-family:monospace;outline:none;cursor:pointer">
+      <option value="">— Select a known player —</option>
+    </select>
     <div style="display:flex;gap:0.5rem;align-items:center">
-      <input id="sidInput" type="text" placeholder="Paste session ID…"
+      <input id="sidInput" type="text" placeholder="Or paste session ID…"
         style="flex:1;background:#1a1a1a;border:1px solid var(--border2);border-radius:7px;
                padding:0.5rem 0.75rem;color:var(--text);font-size:0.78rem;font-family:monospace;outline:none">
       <button class="btn btn-default" id="lookupBtn">Look Up</button>
@@ -376,6 +379,26 @@
     el.textContent = text; el.className = `msg ${type}`;
   }
 
+  async function populateSidDropdown() {
+    try {
+      const players = await fetch('/admin/api/achievements').then(r => r.json());
+      const sel = document.getElementById('sidSelect');
+      players.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.sid;
+        opt.textContent = `…${p.sid.slice(-12)}  (${p.achievements.length} achievement${p.achievements.length !== 1 ? 's' : ''})`;
+        sel.appendChild(opt);
+      });
+    } catch {}
+  }
+
+  document.getElementById('sidSelect').addEventListener('change', function() {
+    if (this.value) {
+      document.getElementById('sidInput').value = this.value;
+      document.getElementById('lookupBtn').click();
+    }
+  });
+
   let currentLookupSid = null;
 
   document.getElementById('lookupBtn').addEventListener('click', async () => {
@@ -414,6 +437,7 @@
     } catch { setLookupMsg('Failed.', 'err'); }
   });
 
+  populateSidDropdown();
   init();
 </script>
 </body>

@@ -105,9 +105,14 @@
       <h2>Players</h2>
       <span class="total-count" id="totalCount"></span>
     </div>
-    <input id="sidFilter" type="text" placeholder="Filter by session ID…"
-      style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;
-             padding:0.5rem 0.75rem;color:var(--text);font-size:0.78rem;font-family:monospace;outline:none">
+    <div style="display:flex;gap:0.5rem">
+      <input id="sidFilter" type="text" placeholder="Filter by session ID…"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;
+               padding:0.5rem 0.75rem;color:var(--text);font-size:0.78rem;font-family:monospace;outline:none">
+      <select id="sidJump" style="background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:0.5rem 0.75rem;color:var(--text);font-size:0.78rem;font-family:monospace;outline:none;cursor:pointer;max-width:220px">
+        <option value="">— Jump to player —</option>
+      </select>
+    </div>
     <div id="playerList"><p class="msg">Loading…</p></div>
   </section>
 </div>
@@ -132,6 +137,14 @@
     document.getElementById('playerList').innerHTML = '<p class="msg">Loading…</p>';
     try {
       players = await fetch('/admin/api/achievements').then(r => r.json());
+      const jump = document.getElementById('sidJump');
+      jump.innerHTML = '<option value="">— Jump to player —</option>';
+      players.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.sid;
+        opt.textContent = `…${p.sid.slice(-12)}  (${p.achievements.length} ach)`;
+        jump.appendChild(opt);
+      });
       render();
     } catch {
       document.getElementById('playerList').innerHTML = '<p class="msg err">Failed to load.</p>';
@@ -139,6 +152,21 @@
   }
 
   document.getElementById('sidFilter').addEventListener('input', render);
+
+  document.getElementById('sidJump').addEventListener('change', function() {
+    if (!this.value) return;
+    document.getElementById('sidFilter').value = '';
+    render();
+    // Expand and scroll to the selected player card
+    const hdr = document.getElementById('ph-' + this.value);
+    const body = document.getElementById('pb-' + this.value);
+    if (hdr && body && !body.classList.contains('open')) {
+      hdr.classList.add('open');
+      body.classList.add('open');
+    }
+    if (hdr) setTimeout(() => hdr.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    this.value = '';
+  });
 
   function render() {
     const filterVal = document.getElementById('sidFilter').value.trim().toLowerCase();
