@@ -771,11 +771,15 @@ function copyText(btn, text) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
+  fetch('/api/session').then(r => r.json()).then(({ sid }) => {
+    if (sid) document.getElementById('sidCode').textContent = sid;
+  }).catch(() => {});
+
   // Resolve today's seed offset (admin may have shuffled) before picking songs
   try {
     const cfg = await fetch(`/api/songless/config?date=${TODAY}`).then(r => r.json());
     SONGS_TODAY = getDailySongs(cfg.seedOffset || 0);
-    if (cfg.seed) initSeedWidget(cfg.seed, cfg.sid);
+    if (cfg.seed) initSeedWidget(cfg.seed);
   } catch {
     SONGS_TODAY = getDailySongs(0);
   }

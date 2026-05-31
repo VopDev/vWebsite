@@ -115,7 +115,6 @@ async function loadState() {
   try {
     const res = await fetch(`/api/chatter-quiz/state?date=${TODAY}`);
     const s   = await res.json();
-    if (s?.sid) document.getElementById('sidCode').textContent = s.sid;
     if (s && Array.isArray(s.log)) { log = s.log; current = s.current ?? log.length; return true; }
   } catch {}
   return false;
@@ -240,6 +239,10 @@ function showResults() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
+  fetch('/api/session').then(r => r.json()).then(({ sid }) => {
+    if (sid) document.getElementById('sidCode').textContent = sid;
+  }).catch(() => {});
+
   try {
     const res  = await fetch(`/api/chatter-quiz/messages?date=${TODAY}`);
     const data = await res.json();
