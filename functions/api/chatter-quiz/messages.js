@@ -138,8 +138,12 @@ export async function onRequestGet({ request, env }) {
   const date     = new URL(request.url).searchParams.get('date') || todayStr();
   const cacheKey = `chatter-quiz-${date}`;
 
-  const cached = await env.SONGLESS_KV.get(cacheKey, 'json');
-  if (cached) return Response.json(cached);
+  // Emotes are always fetched fresh from their own cache — never baked into the questions cache
+  const cachedQuestions = await env.SONGLESS_KV.get(cacheKey, 'json');
+  if (cachedQuestions) {
+    const emotes = await getEmotes(env);
+    return Response.json({ ...cachedQuestions, emotes });
+  }
 
   // eraOffset shifts the RNG seed so rerolls pick different messages from the same pool
   const eraOffsetRaw = await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`);
@@ -169,7 +173,7 @@ export async function onRequestGet({ request, env }) {
         } catch { return null; }
       })
     ),
-    getEmotes(env),
+    getEmotes(env), // fetched in parallel but stored separately from questions
   ]);
 
   const pool = fetchedResults
@@ -203,7 +207,8 @@ export async function onRequestGet({ request, env }) {
     }
   }
 
-  const result = { questions, emotes, variant: eraOffset, seed: generateSeed() };
+  // Store questions WITHOUT emotes so a stale emote fetch never poisons the cache
+  const result = { questions, variant: eraOffset, seed: generateSeed() };
   await env.SONGLESS_KV.put(cacheKey, JSON.stringify(result), { expirationTtl: 60 * 60 * 25 });
-  return Response.json(result);
+  return Response.json({ ...result, emotes });
 }
