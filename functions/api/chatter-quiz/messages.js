@@ -145,9 +145,9 @@ export async function onRequestGet({ request, env }) {
   const eraOffsetRaw = await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`);
   const eraOffset    = parseInt(eraOffsetRaw || '0', 10) || 0;
 
-  // Pick 20 chatters randomly per day — avoids timing out on 50+ parallel requests
+  // Pick 25 chatters randomly per day — avoids timing out on 50+ parallel requests
   const pickRand    = seededRand(dayIndex(date) * 3571 + eraOffset * 999 + 7);
-  const candidates  = shuffle(CHATTERS.filter(c => !BOTS.has(c.username.toLowerCase())), pickRand).slice(0, 20);
+  const candidates  = shuffle(CHATTERS.filter(c => !BOTS.has(c.username.toLowerCase())), pickRand).slice(0, 25);
 
   const [fetchedResults, emotes] = await Promise.all([
     Promise.allSettled(
@@ -180,20 +180,27 @@ export async function onRequestGet({ request, env }) {
     return Response.json({ error: 'Not enough chat data for this period. Try again later.', questions: [] });
   }
 
-  const rand      = seededRand(dayIndex(date) * 7919 + eraOffset * 1337 + 3);
-  const shuffled  = shuffle(pool, rand);
-  const questions = [];
+  const rand         = seededRand(dayIndex(date) * 7919 + eraOffset * 1337 + 3);
+  const shuffled     = shuffle(pool, rand);
+  const questions    = [];
+  const usedMessages = new Set();
 
-  for (const chatter of shuffled) {
-    if (questions.length >= QUESTIONS) break;
-    const msg    = chatter.messages[Math.floor(rand() * chatter.messages.length)];
-    const others = shuffle(pool.filter(c => c.username !== chatter.username), rand);
-    if (others.length < 3) continue;
-    const options = shuffle([
-      { username: chatter.username, display: chatter.display },
-      ...others.slice(0, 3).map(c => ({ username: c.username, display: c.display })),
-    ], rand);
-    questions.push({ text: msg, answer: chatter.username, options });
+  // Two passes: first use each chatter once, then allow reuse with different messages
+  for (let pass = 0; pass < 2 && questions.length < QUESTIONS; pass++) {
+    for (const chatter of shuffled) {
+      if (questions.length >= QUESTIONS) break;
+      const others = shuffle(pool.filter(c => c.username !== chatter.username), rand);
+      if (others.length < 3) continue;
+      const available = chatter.messages.filter(m => !usedMessages.has(m));
+      if (available.length === 0) continue;
+      const msg = available[Math.floor(rand() * available.length)];
+      usedMessages.add(msg);
+      const options = shuffle([
+        { username: chatter.username, display: chatter.display },
+        ...others.slice(0, 3).map(c => ({ username: c.username, display: c.display })),
+      ], rand);
+      questions.push({ text: msg, answer: chatter.username, options });
+    }
   }
 
   const result = { questions, emotes, variant: eraOffset, seed: generateSeed() };
