@@ -121,6 +121,25 @@
     <div id="statsView">—</div>
   </section>
 
+  <!-- Player Lookup -->
+  <section>
+    <h2>Player Lookup</h2>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input id="sidInput" type="text" placeholder="Paste session ID…"
+        style="flex:1;background:#1a1a1a;border:1px solid var(--border2);border-radius:7px;
+               padding:0.5rem 0.75rem;color:var(--text);font-size:0.78rem;font-family:monospace;outline:none">
+      <button class="btn btn-default" id="lookupBtn">Look Up</button>
+    </div>
+    <div id="playerInfo" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem">
+      <div id="playerStateInfo" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.6rem"></div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <button class="btn btn-danger" id="resetPlayerStateBtn">Reset Game State</button>
+        <button class="btn btn-danger" id="resetPlayerAchBtn">Reset Achievements</button>
+      </div>
+    </div>
+    <p class="msg" id="lookupMsg"></p>
+  </section>
+
   <!-- Actions -->
   <section>
     <h2>Actions</h2>
@@ -349,6 +368,50 @@
       loadStats(selectedDate);
       setMsg('Stats cleared.', 'ok');
     } catch { setMsg('Failed.', 'err'); }
+  });
+
+  // ── Player Lookup ────────────────────────────────────────────────────────────
+  function setLookupMsg(text, type = '') {
+    const el = document.getElementById('lookupMsg');
+    el.textContent = text; el.className = `msg ${type}`;
+  }
+
+  let currentLookupSid = null;
+
+  document.getElementById('lookupBtn').addEventListener('click', async () => {
+    const sid = document.getElementById('sidInput').value.trim();
+    if (!sid) { setLookupMsg('Enter a session ID.', 'err'); return; }
+    currentLookupSid = sid;
+    try {
+      const data = await fetch(`/admin/api/songless/player?sid=${encodeURIComponent(sid)}&date=${TODAY}`).then(r => r.json());
+      const normal = data.normal, hard = data.hard, achs = data.achievements || [];
+      const lines = [];
+      if (normal) lines.push(`Normal: song ${(normal.slot ?? 0) + 1}/5, ${normal.games?.filter(g => g.won).length ?? 0} won`);
+      if (hard)   lines.push(`Hard: song ${(hard.slot ?? 0) + 1}/5, ${hard.games?.filter(g => g.won).length ?? 0} won`);
+      if (!normal && !hard) lines.push('No game state for today.');
+      lines.push(`Achievements: ${achs.length}`);
+      document.getElementById('playerStateInfo').innerHTML = lines.join('<br>');
+      document.getElementById('playerInfo').style.display = '';
+      setLookupMsg('', '');
+    } catch { setLookupMsg('Lookup failed.', 'err'); }
+  });
+
+  document.getElementById('resetPlayerStateBtn').addEventListener('click', async () => {
+    if (!currentLookupSid || !confirm('Reset this player\'s game state for today?')) return;
+    try {
+      await fetch(`/admin/api/songless/player?sid=${encodeURIComponent(currentLookupSid)}&date=${TODAY}`, { method: 'DELETE' });
+      setLookupMsg('Game state reset.', 'ok');
+      document.getElementById('playerInfo').style.display = 'none';
+    } catch { setLookupMsg('Failed.', 'err'); }
+  });
+
+  document.getElementById('resetPlayerAchBtn').addEventListener('click', async () => {
+    if (!currentLookupSid || !confirm('Reset achievements for this player?')) return;
+    try {
+      await fetch(`/admin/api/achievements?sid=${encodeURIComponent(currentLookupSid)}`, { method: 'DELETE' });
+      setLookupMsg('Achievements reset.', 'ok');
+      document.getElementById('playerInfo').style.display = 'none';
+    } catch { setLookupMsg('Failed.', 'err'); }
   });
 
   init();

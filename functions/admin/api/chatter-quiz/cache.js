@@ -1,3 +1,13 @@
+export async function onRequestGet({ request, env }) {
+  const url  = new URL(request.url);
+  const sid  = url.searchParams.get('sid');
+  const date = url.searchParams.get('date');
+  if (!sid || !date) return new Response('Bad request', { status: 400 });
+  const state = await env.SONGLESS_KV.get(`cq-state-${sid}-${date}`, 'json');
+  const achs  = await env.SONGLESS_KV.get(`achievements-${sid}`, 'json') || [];
+  return Response.json({ state, achievements: achs });
+}
+
 export async function onRequestDelete({ request, env }) {
   const url  = new URL(request.url);
   const date = url.searchParams.get('date');
@@ -12,6 +22,13 @@ export async function onRequestDelete({ request, env }) {
     const current = parseInt(await env.SONGLESS_KV.get(`chatter-quiz-era-${date}`) || '0', 10) || 0;
     await env.SONGLESS_KV.put(`chatter-quiz-era-${date}`, String(current + 1), { expirationTtl: 60 * 60 * 48 });
     await env.SONGLESS_KV.delete(`chatter-quiz-${date}`);
+    return new Response('OK', { status: 200 });
+  }
+
+  if (type === 'player-state') {
+    const sid = url.searchParams.get('sid');
+    if (!sid || !date) return new Response('Bad request', { status: 400 });
+    await env.SONGLESS_KV.delete(`cq-state-${sid}-${date}`);
     return new Response('OK', { status: 200 });
   }
 

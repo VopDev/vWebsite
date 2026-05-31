@@ -17,7 +17,7 @@ export async function onRequestGet({ request, env }) {
   if (!sid) return Response.json(null);
 
   const data = await env.SONGLESS_KV.get(`cq-state-${sid}-${date}`, 'json');
-  return Response.json(data);
+  return Response.json(data ? { ...data, sid } : { sid });
 }
 
 export async function onRequestPost({ request, env }) {

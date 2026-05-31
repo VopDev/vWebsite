@@ -118,6 +118,25 @@
     <div id="questionsView"><p class="msg">Loading…</p></div>
   </section>
 
+  <!-- Player Lookup -->
+  <section>
+    <h2>Player Lookup</h2>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input id="sidInput" type="text" placeholder="Paste session ID…"
+        style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;
+               padding:0.5rem 0.75rem;color:var(--text);font-size:0.78rem;font-family:monospace;outline:none">
+      <button class="btn btn-default" id="lookupBtn">Look Up</button>
+    </div>
+    <div id="playerInfo" style="display:none" class="card">
+      <div id="playerStateInfo" style="font-size:0.8rem;color:var(--muted)"></div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap">
+        <button class="btn btn-danger" id="resetPlayerStateBtn">Reset Game State</button>
+        <button class="btn btn-danger" id="resetPlayerAchBtn">Reset Achievements</button>
+      </div>
+    </div>
+    <p class="msg" id="lookupMsg"></p>
+  </section>
+
   <!-- Actions -->
   <section>
     <h2>Actions</h2>
@@ -267,6 +286,53 @@
       await fetch('/admin/api/chatter-quiz/cache?type=emotes', { method: 'DELETE' });
       setMsg('Emote cache cleared.', 'ok');
     } catch { setMsg('Failed.', 'err'); }
+  });
+
+  // ── Player Lookup ────────────────────────────────────────────────────────────
+  function setLookupMsg(text, type = '') {
+    const el = document.getElementById('lookupMsg');
+    el.textContent = text; el.className = `msg ${type}`;
+  }
+
+  let currentLookupSid = null;
+
+  document.getElementById('lookupBtn').addEventListener('click', async () => {
+    const sid = document.getElementById('sidInput').value.trim();
+    if (!sid) { setLookupMsg('Enter a session ID.', 'err'); return; }
+    currentLookupSid = sid;
+    try {
+      const data = await fetch(`/admin/api/chatter-quiz/cache?sid=${encodeURIComponent(sid)}&date=${TODAY}`).then(r => r.json());
+      const info  = document.getElementById('playerStateInfo');
+      const state = data.state;
+      const achs  = data.achievements || [];
+      if (state) {
+        info.innerHTML = `<strong>Progress:</strong> Q${(state.current ?? 0) + 1} / ${(state.log?.length ?? 0)} answered ·
+          ${state.log?.filter(a => a.correct).length ?? 0} correct<br>
+          <strong>Achievements:</strong> ${achs.length}`;
+      } else {
+        info.innerHTML = `No game state for today. <strong>Achievements:</strong> ${achs.length}`;
+      }
+      document.getElementById('playerInfo').style.display = '';
+      setLookupMsg('', '');
+    } catch { setLookupMsg('Lookup failed.', 'err'); }
+  });
+
+  document.getElementById('resetPlayerStateBtn').addEventListener('click', async () => {
+    if (!currentLookupSid || !confirm('Reset this player\'s game state for today?')) return;
+    try {
+      await fetch(`/admin/api/chatter-quiz/cache?type=player-state&sid=${encodeURIComponent(currentLookupSid)}&date=${TODAY}`, { method: 'DELETE' });
+      setLookupMsg('Game state reset.', 'ok');
+      document.getElementById('playerInfo').style.display = 'none';
+    } catch { setLookupMsg('Failed.', 'err'); }
+  });
+
+  document.getElementById('resetPlayerAchBtn').addEventListener('click', async () => {
+    if (!currentLookupSid || !confirm('Reset achievements for this player?')) return;
+    try {
+      await fetch(`/admin/api/achievements?sid=${encodeURIComponent(currentLookupSid)}`, { method: 'DELETE' });
+      setLookupMsg('Achievements reset.', 'ok');
+      document.getElementById('playerInfo').style.display = 'none';
+    } catch { setLookupMsg('Failed.', 'err'); }
   });
 
   // ── Init ─────────────────────────────────────────────────────────────────────

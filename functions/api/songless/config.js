@@ -21,5 +21,6 @@ export async function onRequestGet({ request, env }) {
     await env.SONGLESS_KV.put(`songless-seed-${date}`, seed, { expirationTtl: 60 * 60 * 24 * 7 });
   }
 
-  return Response.json({ seedOffset, seed });
+  const sid = request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
+  return Response.json({ seedOffset, seed, sid });
 }

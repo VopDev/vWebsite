@@ -115,6 +115,7 @@ async function loadState() {
   try {
     const res = await fetch(`/api/chatter-quiz/state?date=${TODAY}`);
     const s   = await res.json();
+    if (s?.sid) document.getElementById('sidCode').textContent = s.sid;
     if (s && Array.isArray(s.log)) { log = s.log; current = s.current ?? log.length; return true; }
   } catch {}
   return false;
@@ -153,9 +154,9 @@ function renderQuestion() {
   });
 }
 
-function initSeedWidget(seed) {
-  const formatted = seed.match(/.{4}/g).join(' ');
-  document.getElementById('seedCode').textContent = formatted;
+function initSeedWidget(seed, sid) {
+  document.getElementById('seedCode').textContent = seed.match(/.{4}/g).join(' ');
+  if (sid) document.getElementById('sidCode').textContent = sid;
   const btn = document.getElementById('seedBtn');
   btn.style.display = '';
   btn.addEventListener('click', e => {
