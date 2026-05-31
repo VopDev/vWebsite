@@ -118,7 +118,7 @@ h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.12em; text-transform
 .result-title { font-size: 1.1rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .result-word  { font-size: 0.75rem; color: var(--muted); }
 .result-word strong { color: var(--text); letter-spacing: 0.1em; text-transform: uppercase; }
-.result-emoji { font-family: monospace; font-size: 1.1rem; line-height: 1.6; letter-spacing: 0.05em; }
+.result-emoji { font-family: monospace; font-size: 1.1rem; line-height: 1.8; letter-spacing: 0.05em; white-space: pre; }
 .btn-share {
   background: var(--green); color: #fff; border: none; border-radius: 8px;
   padding: 0.7rem 1.5rem; font-size: 0.85rem; font-weight: 700;
