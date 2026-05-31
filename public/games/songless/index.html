@@ -104,6 +104,23 @@
 
 
 <div id="toastContainer"></div>
+<div class="seed-timer">New seed in <strong id="seedTimerVal">…</strong></div>
+<script>
+  (function() {
+    function tick() {
+      const now = Date.now();
+      const next = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
+      const ms = next - now;
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      document.getElementById('seedTimerVal').textContent =
+        `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+</script>
 
 <div id="cookieBanner" style="display:none">
   <p>🍪 This game uses cookies to save your progress and achievements. Clearing cookies will erase your data.</p>

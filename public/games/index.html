@@ -190,7 +190,26 @@
     </div>
   </div>
 
+  <div style="position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:0.68rem;letter-spacing:0.06em;color:#666;padding:0.55rem 1rem;background:#0a0a0a;border-top:1px solid #222;z-index:50">
+    New seed in <strong id="seedTimerVal" style="color:#f0f0f0;font-variant-numeric:tabular-nums">…</strong>
+  </div>
+
   <script>
+    (function() {
+      function tick() {
+        const now = Date.now();
+        const next = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
+        const ms = next - now;
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+        document.getElementById('seedTimerVal').textContent =
+          `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+
     const toggle = document.getElementById('hardModeToggle');
     toggle.checked = localStorage.getItem('songless-hard') === '1';
     toggle.addEventListener('change', () => {
