@@ -3,11 +3,6 @@ function todayStr() {
   return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
 }
 
-function nextIn() {
-  const n  = new Date();
-  const ms = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1) - Date.now();
-  return `${Math.floor(ms / 3600000)}h ${Math.floor((ms % 3600000) / 60000)}m`;
-}
 
 function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -255,7 +250,6 @@ function showResults() {
     </div>`;
   }).join('');
 
-  document.getElementById('nextLabel').textContent = `Next quiz in ${nextIn()}`;
 
   document.getElementById('shareBtn').addEventListener('click', () => {
     const emoji = log.map(a => a.correct ? '✅' : '❌').join('');
