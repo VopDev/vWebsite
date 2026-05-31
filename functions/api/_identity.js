@@ -184,3 +184,38 @@ export async function getHandle(env, sid) {
   const custom = await env.SONGLESS_KV.get(`profile-name-${sid}`);
   return custom || handleFromSid(sid);
 }
+
+// ── Roles ─────────────────────────────────────────────────────────────────────
+// Every player has a role stored in KV under `role-{sid}`. Three roles exist:
+//   'player' (default / no key)         — normal user
+//   'staff'                             — may access the /admin portal
+//   'admin'  (Administrator)            — staff + may manage other users' roles
+// The very first Administrator bootstraps by claiming this username (case-
+// insensitive); on first read we persist 'admin' so it survives later renames.
+export const ROLES = ['player', 'staff', 'admin'];
+export const BOOTSTRAP_ADMIN = 'vopori';
+
+// The player's stored role, defaulting to 'player'. Auto-promotes the bootstrap
+// username to 'admin' on first read so the first Administrator needs no setup.
+export async function getRole(env, sid) {
+  if (!sid) return 'player';
+  const stored = await env.SONGLESS_KV.get(`role-${sid}`);
+  if (stored === 'admin') return 'admin';
+  const name = await env.SONGLESS_KV.get(`profile-name-${sid}`);
+  if (name && name.toLowerCase() === BOOTSTRAP_ADMIN) {
+    await env.SONGLESS_KV.put(`role-${sid}`, 'admin');
+    return 'admin';
+  }
+  return stored || 'player';
+}
+
+// Portal access: staff and admins. (Used by the /admin middleware.)
+export async function isStaff(env, sid) {
+  const role = await getRole(env, sid);
+  return role === 'staff' || role === 'admin';
+}
+
+// Role management: Administrators only.
+export async function isAdmin(env, sid) {
+  return (await getRole(env, sid)) === 'admin';
+}

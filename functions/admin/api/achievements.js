@@ -21,6 +21,23 @@
   return Response.json(players);
 }
 
+export async function onRequestPost({ request, env }) {
+  // Grant a specific achievement to a player (admin override).
+  const url  = new URL(request.url);
+  const sid  = url.searchParams.get('sid');
+  const body = await request.json().catch(() => ({}));
+  const id   = body.id;
+  if (!sid || !id) return new Response('Bad request', { status: 400 });
+
+  const key  = `achievements-${sid}`;
+  const data = (await env.SONGLESS_KV.get(key, 'json')) || [];
+  if (!data.some(a => a.id === id)) {
+    data.push({ id, unlockedAt: new Date().toISOString() });
+    await env.SONGLESS_KV.put(key, JSON.stringify(data));
+  }
+  return Response.json({ achievements: data });
+}
+
 export async function onRequestDelete({ request, env }) {
   const url = new URL(request.url);
   const sid  = url.searchParams.get('sid');

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player Management — Vopori</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+      --border: #222; --border2: #333; --text: #f0f0f0; --muted: #555;
+      --green: #22c55e; --red: #ef4444; --gold: #f59e0b;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh; padding: 2rem 1rem 5rem;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .page { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 2rem; }
+
+    a.back { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.05em; }
+    a.back:hover { color: var(--text); }
+    h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
+    .subtitle { color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; }
+    h2 { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    h3 { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; color: var(--text); }
+
+    section { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    /* Inputs */
+    .sid-input, .sid-select {
+      background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px;
+      padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.8rem; outline: none;
+    }
+    .sid-select { cursor: pointer; width: 100%; }
+    .sid-select option, .sid-select optgroup { background: var(--surface2); }
+    .mono { font-family: monospace; }
+
+    /* Buttons */
+    .btn {
+      padding: 0.5rem 1rem; border-radius: 7px; font-size: 0.73rem; font-weight: 700;
+      cursor: pointer; letter-spacing: 0.07em; text-transform: uppercase;
+      border: 1px solid var(--border2); transition: border-color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-default { background: var(--surface2); color: var(--text); }
+    .btn-default:hover { border-color: #4a4a4a; }
+    .btn-danger { background: #1a0808; color: var(--red); border-color: #3d1a1a; }
+    .btn-danger:hover { background: #2a1010; }
+    .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.63rem; }
+    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .msg { font-size: 0.75rem; color: var(--muted); min-height: 1.2em; }
+    .msg.ok  { color: var(--green); }
+    .msg.err { color: var(--red); }
+
+    /* Player detail */
+    .detail { display: none; flex-direction: column; gap: 1.25rem; }
+    .detail.open { display: flex; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+    .detail-head { padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .detail-name { font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; }
+    .detail-name .tag { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); margin-left: 0.5rem; vertical-align: middle; }
+    .detail-name.staff { color: var(--red); }
+    .staff-badge { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); background: #1a0808; border: 1px solid #3d1a1a; border-radius: 4px; padding: 0.1em 0.4em; margin-left: 0.5rem; vertical-align: middle; }
+    .detail-sid { font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; word-break: break-all; }
+    .detail-ach { font-size: 0.72rem; color: var(--muted); text-align: right; flex-shrink: 0; }
+    .detail-ach strong { color: var(--text); font-size: 1.3rem; }
+
+    /* Per-game stat cards */
+    .game-card { padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+    .game-card-head { display: flex; align-items: center; gap: 0.6rem; }
+    .game-card-head .emoji { font-size: 1.15rem; }
+    .game-card-head .name { font-size: 0.85rem; font-weight: 700; flex: 1; }
+    .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    .tile { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.4rem; text-align: center; }
+    .tile .v { font-size: 1.15rem; font-weight: 800; line-height: 1; }
+    .tile .l { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-top: 0.25rem; }
+    .game-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .game-today { font-size: 0.7rem; color: var(--muted); }
+    .game-today b { color: var(--text); font-weight: 700; }
+
+    /* Achievements */
+    .ach-grant { display: flex; gap: 0.5rem; }
+    .ach-list { display: flex; flex-direction: column; gap: 0.4rem; }
+    .ach-row {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0.5rem 0.6rem; border-radius: 7px;
+      background: var(--surface2); border: 1px solid var(--border);
+    }
+    .ach-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .ach-info { flex: 1; min-width: 0; }
+    .ach-name { font-size: 0.78rem; font-weight: 700; }
+    .ach-meta { font-size: 0.63rem; color: var(--muted); margin-top: 0.1rem; }
+    .ach-meta .game-tag { color: var(--gold); margin-right: 0.4rem; }
+    .empty-msg { font-size: 0.72rem; color: var(--muted); padding: 0.4rem 0; }
+
+    .foot-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .danger-card { background: var(--surface); border: 1px solid #3d1a1a; border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .danger-note { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header style="display:flex;flex-direction:column;gap:0.4rem">
+    <a href="/admin/" class="back">← Admin</a>
+    <h1>Player Management</h1>
+    <p class="subtitle">Look up a player by username to view stats, manage achievements, and clear data.</p>
+  </header>
+
+  <!-- Find player -->
+  <section>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <h2>Find Player</h2>
+      <span class="msg mono" id="countLabel" style="min-height:0"></span>
+    </div>
+    <input id="filter" type="text" placeholder="Filter by username…" class="sid-input" style="width:100%">
+    <select id="playerSelect" class="sid-select">
+      <option value="">— Select a player —</option>
+    </select>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input id="sidInput" type="text" placeholder="…or paste a session ID" class="sid-input mono" style="flex:1">
+      <button class="btn btn-default" id="sidLookupBtn">Look Up</button>
+      <button class="btn btn-default" id="refreshBtn">↻</button>
+    </div>
+    <p class="msg" id="findMsg"></p>
+  </section>
+
+  <!-- Player detail -->
+  <section>
+    <div class="detail" id="detail">
+      <div class="card detail-head">
+        <div style="min-width:0">
+          <div class="detail-name" id="dName">—</div>
+          <div class="detail-sid mono" id="dSid"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;flex-shrink:0">
+          <div class="detail-ach"><strong id="dAch">0</strong> ach</div>
+          <select id="roleSelect" class="sid-select" style="width:auto;display:none">
+            <option value="player">Player</option>
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+          <span class="msg" id="roleLabel" style="min-height:0;text-align:right"></span>
+        </div>
+      </div>
+
+      <div>
+        <h2 style="margin-bottom:0.6rem">Stats Across Games</h2>
+        <div id="statsView" style="display:flex;flex-direction:column;gap:0.75rem"></div>
+      </div>
+
+      <div>
+        <h2 style="margin-bottom:0.6rem">Achievements</h2>
+        <div class="ach-grant">
+          <select id="grantSelect" class="sid-select"><option value="">— Grant an achievement… —</option></select>
+          <button class="btn btn-default" id="grantBtn">Grant</button>
+        </div>
+        <div class="ach-list" id="achList" style="margin-top:0.6rem"></div>
+      </div>
+
+      <div class="foot-actions">
+        <button class="btn btn-danger" id="resetAchBtn">Reset All Achievements</button>
+        <button class="btn btn-danger" id="resetAllBtn">Reset ALL Data</button>
+      </div>
+      <p class="msg" id="detailMsg"></p>
+    </div>
+  </section>
+
+  <!-- Bulk danger zone -->
+  <section>
+    <h2>Bulk Actions</h2>
+    <div class="danger-card">
+      <p class="danger-note">Reset <strong>every</strong> player's Chatter Quiz progress for today (<span class="mono" id="todayLabel"></span>) so the whole audience can replay. Does not touch achievements or other games.</p>
+      <button class="btn btn-danger" id="resetAllChatterBtn" style="align-self:flex-start">Reset All Chatter Quiz Progress (Today)</button>
+    </div>
+    <div class="danger-card">
+      <p class="danger-note">Wipe <strong>all achievements for all players</strong>. Game stats are kept. Cannot be undone.</p>
+      <button class="btn btn-danger" id="resetAllAchBtn" style="align-self:flex-start">Reset ALL Achievements (Everyone)</button>
+    </div>
+    <p class="msg" id="bulkMsg"></p>
+  </section>
+</div>
+
+<script src="/games/achievements.js"></script>
+<script>
+  const ACH_MAP = Object.fromEntries(ALL_ACHIEVEMENTS.map(a => [a.id, a]));
+  const enc = encodeURIComponent;
+
+  function todayStr() {
+    const n = new Date();
+    return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
+  }
+  const TODAY = todayStr();
+  document.getElementById('todayLabel').textContent = TODAY;
+
+  function setMsg(id, text, type = '') {
+    const el = document.getElementById(id);
+    el.textContent = text; el.className = `msg ${type}`;
+    if (text && type === 'ok') setTimeout(() => { if (el.textContent === text) { el.textContent = ''; el.className = 'msg'; } }, 3000);
+  }
+  function fmtDate(iso) {
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Per-game reset wiring + which aggregate tiles to show.
+  const GAMES = [
+    { key: 'words', name: 'Words', emoji: '🔡',
+      reset: sid => `/admin/api/words/player?sid=${enc(sid)}&date=${TODAY}`,
+      tiles: g => [['Days', g.days], ['Wins', g.wins], ['Losses', g.losses], ['Playing', g.inProgress]] },
+    { key: 'songquiz', name: 'SongQuiz', emoji: '🎵',
+      reset: sid => `/admin/api/songquiz/player?sid=${enc(sid)}&date=${TODAY}`,
+      tiles: g => [['Days', g.days], ['Songs Won', g.songsWon], ['Songs Played', g.songsPlayed], ['Sweeps', g.sweeps]] },
+    { key: 'spelling', name: 'Spelling Bee', emoji: '🐝',
+      reset: sid => `/admin/api/spelling-bee/player?sid=${enc(sid)}&date=${TODAY}`,
+      tiles: g => [['Days', g.days], ['Correct', g.correct], ['Answered', g.answered], ['Perfect', g.perfectDays]] },
+    { key: 'chatter', name: 'Chatter Quiz', emoji: '💬',
+      reset: sid => `/admin/api/chatter-quiz/cache?type=player-state&sid=${enc(sid)}&date=${TODAY}`,
+      tiles: g => [['Days', g.days], ['Correct', g.correct], ['Answered', g.answered], ['Perfect', g.perfectDays]] },
+  ];
+
+  let players = [];
+  let current = null;        // full profile from /admin/api/players?sid=
+  let viewerIsAdmin = false; // is the logged-in viewer an Administrator?
+
+  const ROLE_LABEL = { player: 'Player', staff: 'Staff', admin: 'Admin' };
+
+  // The viewer's own role decides whether they may manage other users' roles.
+  async function loadViewer() {
+    try {
+      const me = await fetch('/api/session').then(r => r.json());
+      viewerIsAdmin = me.role === 'admin';
+    } catch { viewerIsAdmin = false; }
+  }
+
+  function renderRole() {
+    const p = current;
+    const sel   = document.getElementById('roleSelect');
+    const label = document.getElementById('roleLabel');
+    if (viewerIsAdmin) {
+      sel.style.display = '';
+      sel.value = p.role || 'player';
+      label.textContent = '';
+    } else {
+      sel.style.display = 'none';
+      label.textContent = `Role: ${ROLE_LABEL[p.role] || 'Player'}`;
+    }
+  }
+
+  document.getElementById('roleSelect').addEventListener('change', async function() {
+    if (!current || !viewerIsAdmin) return;
+    const role = this.value;
+    if (!confirm(`Set ${current.handle}'s role to ${ROLE_LABEL[role]}?`)) { this.value = current.role; return; }
+    try {
+      const res = await fetch(`/admin/api/players?sid=${enc(current.sid)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }),
+      });
+      if (!res.ok) { setMsg('detailMsg', 'Not allowed.', 'err'); this.value = current.role; return; }
+      const data = await res.json();
+      current.role = data.role; current.staff = data.staff;
+      const r = players.find(x => x.sid === current.sid);
+      if (r) { r.role = data.role; r.staff = data.staff; }
+      renderDetail(); renderOptions();
+      setMsg('detailMsg', `Role set to ${ROLE_LABEL[role]}.`, 'ok');
+    } catch { setMsg('detailMsg', 'Failed.', 'err'); this.value = current.role; }
+  });
+
+  // ── Player list / dropdown ───────────────────────────────────────────────────
+  async function loadPlayers() {
+    setMsg('findMsg', 'Loading players…');
+    try {
+      players = await fetch('/admin/api/players').then(r => r.json());
+      renderOptions();
+      setMsg('findMsg', '');
+    } catch { setMsg('findMsg', 'Failed to load players.', 'err'); }
+  }
+
+  function renderOptions() {
+    const q    = document.getElementById('filter').value.trim().toLowerCase();
+    const list = q ? players.filter(p => p.handle.toLowerCase().includes(q)) : players;
+    const sel  = document.getElementById('playerSelect');
+    sel.innerHTML = '<option value="">— Select a player —</option>' +
+      list.map(p => {
+        const roleMark = p.role === 'admin' ? ' 🛡 Admin' : (p.role === 'staff' ? ' 🛡 Staff' : '');
+        return `<option value="${p.sid}">${p.handle}${p.custom ? ' ✎' : ''}${roleMark}  ·  ${p.achievements} ach  ·  …${p.sid.slice(-6)}</option>`;
+      }).join('');
+    document.getElementById('countLabel').textContent =
+      players.length ? `${list.length}/${players.length}` : '';
+  }
+
+  document.getElementById('filter').addEventListener('input', renderOptions);
+  document.getElementById('refreshBtn').addEventListener('click', loadPlayers);
+  document.getElementById('playerSelect').addEventListener('change', function() {
+    if (this.value) selectPlayer(this.value);
+  });
+  document.getElementById('sidLookupBtn').addEventListener('click', () => {
+    const sid = document.getElementById('sidInput').value.trim();
+    if (!sid) { setMsg('findMsg', 'Enter a session ID.', 'err'); return; }
+    selectPlayer(sid);
+  });
+
+  // ── Player detail ────────────────────────────────────────────────────────────
+  async function selectPlayer(sid) {
+    setMsg('detailMsg', 'Loading…');
+    document.getElementById('detail').classList.add('open');
+    try {
+      current = await fetch(`/admin/api/players?sid=${enc(sid)}`).then(r => r.json());
+    } catch { setMsg('detailMsg', 'Lookup failed.', 'err'); return; }
+    renderDetail();
+    setMsg('detailMsg', '');
+  }
+
+  function renderDetail() {
+    const p = current;
+    const nameEl = document.getElementById('dName');
+    const roleBadge = p.role === 'admin' ? 'Admin' : (p.role === 'staff' ? 'Staff' : '');
+    nameEl.className = `detail-name${p.staff ? ' staff' : ''}`;
+    nameEl.innerHTML = `${p.handle}${p.custom ? '<span class="tag">custom</span>' : ''}${roleBadge ? `<span class="staff-badge">${roleBadge}</span>` : ''}`;
+    document.getElementById('dSid').textContent = p.sid;
+    document.getElementById('dAch').textContent = p.achievements.length;
+    renderRole();
+
+    // Per-game stat cards
+    document.getElementById('statsView').innerHTML = GAMES.map(g => {
+      const data  = p.games[g.key] || {};
+      const tiles = g.tiles(data).map(([l, v]) => `<div class="tile"><div class="v">${v ?? 0}</div><div class="l">${l}</div></div>`).join('');
+      return `<div class="card game-card">
+        <div class="game-card-head"><span class="emoji">${g.emoji}</span><span class="name">${g.name}</span></div>
+        <div class="tiles">${tiles}</div>
+        <div class="game-foot">
+          <div class="game-today">Today: <b id="today-${g.key}">${data.today ?? '—'}</b></div>
+          <button class="btn btn-danger btn-sm" data-reset="${g.key}">Reset Today</button>
+        </div>
+      </div>`;
+    }).join('');
+    document.querySelectorAll('[data-reset]').forEach(btn =>
+      btn.addEventListener('click', () => resetGame(btn.dataset.reset)));
+
+    renderAchievements();
+  }
+
+  function renderAchievements() {
+    const p = current;
+    const unlocked = new Set(p.achievements.map(a => a.id));
+
+    // Grant dropdown — everything not yet unlocked, grouped by game.
+    const byGame = {};
+    ALL_ACHIEVEMENTS.filter(a => !unlocked.has(a.id)).forEach(a => { (byGame[a.game] ||= []).push(a); });
+    document.getElementById('grantSelect').innerHTML =
+      '<option value="">— Grant an achievement… —</option>' +
+      Object.entries(byGame).map(([game, list]) =>
+        `<optgroup label="${game}">${list.map(a => `<option value="${a.id}">${a.icon} ${a.title}</option>`).join('')}</optgroup>`
+      ).join('');
+
+    // Unlocked list (newest first)
+    const rows = [...p.achievements]
+      .sort((a, b) => new Date(b.unlockedAt) - new Date(a.unlockedAt))
+      .map(a => {
+        const def = ACH_MAP[a.id];
+        return `<div class="ach-row">
+          <div class="ach-icon">${def?.icon ?? '🏅'}</div>
+          <div class="ach-info">
+            <div class="ach-name">${def?.title ?? a.id}</div>
+            <div class="ach-meta"><span class="game-tag">${def?.game ?? '—'}</span>${fmtDate(a.unlockedAt)}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" data-rm="${a.id}">Remove</button>
+        </div>`;
+      }).join('');
+    document.getElementById('achList').innerHTML = rows || '<p class="empty-msg">No achievements unlocked.</p>';
+    document.querySelectorAll('[data-rm]').forEach(btn =>
+      btn.addEventListener('click', () => removeAch(btn.dataset.rm)));
+  }
+
+  function syncRosterCount() {
+    const r = players.find(x => x.sid === current.sid);
+    if (r) r.achievements = current.achievements.length;
+    renderOptions();
+  }
+
+  async function resetGame(key) {
+    const g = GAMES.find(x => x.key === key);
+    if (!current || !g) return;
+    if (!confirm(`Reset ${g.name} progress today for ${current.handle}?`)) return;
+    try {
+      await fetch(g.reset(current.sid), { method: 'DELETE' });
+      document.getElementById('today-' + key).textContent = '—';
+      setMsg('detailMsg', `${g.name} reset.`, 'ok');
+    } catch { setMsg('detailMsg', 'Failed.', 'err'); }
+  }
+
+  document.getElementById('grantBtn').addEventListener('click', async () => {
+    const id = document.getElementById('grantSelect').value;
+    if (!current || !id) return;
+    try {
+      const res = await fetch(`/admin/api/achievements?sid=${enc(current.sid)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      current.achievements = data.achievements;
+      document.getElementById('dAch').textContent = current.achievements.length;
+      renderAchievements();
+      syncRosterCount();
+      setMsg('detailMsg', `Granted “${ACH_MAP[id]?.title ?? id}”.`, 'ok');
+    } catch { setMsg('detailMsg', 'Failed.', 'err'); }
+  });
+
+  async function removeAch(id) {
+    if (!current) return;
+    try {
+      await fetch(`/admin/api/achievements?sid=${enc(current.sid)}&id=${enc(id)}`, { method: 'DELETE' });
+      current.achievements = current.achievements.filter(a => a.id !== id);
+      document.getElementById('dAch').textContent = current.achievements.length;
+      renderAchievements();
+      syncRosterCount();
+      setMsg('detailMsg', 'Achievement removed.', 'ok');
+    } catch { setMsg('detailMsg', 'Failed.', 'err'); }
+  }
+
+  document.getElementById('resetAchBtn').addEventListener('click', async () => {
+    if (!current || !confirm(`Reset ALL achievements for ${current.handle}?`)) return;
+    try {
+      await fetch(`/admin/api/achievements?sid=${enc(current.sid)}`, { method: 'DELETE' });
+      current.achievements = [];
+      document.getElementById('dAch').textContent = '0';
+      renderAchievements();
+      syncRosterCount();
+      setMsg('detailMsg', 'Achievements reset.', 'ok');
+    } catch { setMsg('detailMsg', 'Failed.', 'err'); }
+  });
+
+  document.getElementById('resetAllBtn').addEventListener('click', async () => {
+    if (!current) return;
+    if (!confirm(`Permanently delete ALL data for ${current.handle}?\n\nThis wipes every game state (all dates), achievements, custom username and passkey. Cannot be undone.`)) return;
+    try {
+      const res  = await fetch(`/admin/api/players?sid=${enc(current.sid)}&scope=all`, { method: 'DELETE' });
+      const data = await res.json();
+      players = players.filter(p => p.sid !== current.sid);
+      renderOptions();
+      document.getElementById('detail').classList.remove('open');
+      const sid = current.sid; current = null;
+      setMsg('findMsg', `Deleted ${data.deleted} record(s) for …${sid.slice(-6)}.`, 'ok');
+    } catch { setMsg('detailMsg', 'Failed.', 'err'); }
+  });
+
+  // ── Bulk ─────────────────────────────────────────────────────────────────────
+  document.getElementById('resetAllChatterBtn').addEventListener('click', async () => {
+    if (!confirm(`Reset all players' Chatter Quiz progress for ${TODAY}? Everyone will be able to play again.`)) return;
+    try {
+      const res  = await fetch(`/admin/api/chatter-quiz/cache?type=states&date=${TODAY}`, { method: 'DELETE' });
+      const data = await res.json();
+      setMsg('bulkMsg', `Reset ${data.deleted} player state(s).`, 'ok');
+    } catch { setMsg('bulkMsg', 'Failed.', 'err'); }
+  });
+
+  document.getElementById('resetAllAchBtn').addEventListener('click', async () => {
+    if (!confirm('Reset ALL achievements for ALL players? This cannot be undone.')) return;
+    try {
+      const res  = await fetch('/admin/api/achievements?all=true', { method: 'DELETE' });
+      const data = await res.json();
+      if (current) { current.achievements = []; document.getElementById('dAch').textContent = '0'; renderAchievements(); }
+      players.forEach(p => p.achievements = 0); renderOptions();
+      setMsg('bulkMsg', `Deleted ${data.deleted} player record(s).`, 'ok');
+    } catch { setMsg('bulkMsg', 'Failed.', 'err'); }
+  });
+
+  loadViewer();
+  loadPlayers();
+</script>
+</body>
+</html>

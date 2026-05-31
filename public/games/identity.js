@@ -105,32 +105,82 @@
     return res;
   };
 
-  // Public API + lazy handle (the auto-generated display name).
+  // ── Profile (handle + role/staff), cached for the page lifetime ──────────────
+  let profile = null;
+  let profilePromise = null;
+  function ensureProfile() {
+    if (profile) return Promise.resolve(profile);
+    if (!profilePromise) {
+      profilePromise = window.fetch('/api/profile')
+        .then((r) => r.json())
+        .then((d) => (profile = d || {}))
+        .catch(() => (profile = {}));
+    }
+    return profilePromise;
+  }
+
+  // Staff/admins get a red name + a STAFF/ADMIN badge wherever their handle shows
+  // (opt-in via [data-player-handle]), and any [data-admin-only] elements (e.g. an
+  // admin link) are revealed.
+  let styleInjected = false;
+  function injectStaffStyle() {
+    if (styleInjected) return;
+    styleInjected = true;
+    const tag = document.createElement('style');
+    tag.textContent =
+      '[data-player-handle].vop-staff{color:#ef4444}' +
+      '.vop-staff-badge{display:inline-block;margin-left:0.4em;padding:0.1em 0.4em;font-size:0.62em;' +
+      'font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#ef4444;background:#1a0808;' +
+      'border:1px solid #3d1a1a;border-radius:4px;vertical-align:middle}';
+    document.head.appendChild(tag);
+  }
+  function applyStaffUI() {
+    if (!profile || !profile.staff) return;
+    injectStaffStyle();
+    const label = profile.role === 'admin' ? 'Admin' : 'Staff';
+    document.querySelectorAll('[data-player-handle]').forEach((el) => {
+      el.classList.add('vop-staff');
+      if (!el.querySelector('.vop-staff-badge')) {
+        const b = document.createElement('span');
+        b.className = 'vop-staff-badge';
+        b.textContent = label;
+        el.appendChild(b);
+      }
+    });
+    document.querySelectorAll('[data-admin-only]').forEach((el) => {
+      el.hidden = false;
+      el.style.removeProperty('display');
+    });
+  }
+
+  // Public API + lazy handle (the display name).
   let handle = null;
   const PlayerId = {
     get: () => currentId,
     ready,
     adopt: store,
+    profile: ensureProfile,
+    isStaff: () => !!(profile && profile.staff),
+    role: () => (profile && profile.role) || 'player',
     async getHandle() {
       if (handle) return handle;
-      try {
-        const r = await window.fetch('/api/profile');
-        const d = await r.json();
-        handle = d && d.handle || null;
-      } catch (_) {}
+      const d = await ensureProfile();
+      handle = (d && d.handle) || null;
       // Fill any opt-in placeholders, e.g. <span data-player-handle></span>
       if (handle) {
         document.querySelectorAll('[data-player-handle]').forEach((el) => { el.textContent = handle; });
+        applyStaffUI();
       }
       return handle;
     },
   };
   window.PlayerId = PlayerId;
 
-  // Auto-populate handle placeholders once the DOM is ready.
-  if (document.querySelector('[data-player-handle]') !== null || document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      if (document.querySelector('[data-player-handle]')) PlayerId.getHandle();
-    });
+  // Once the DOM is ready: fill handle placeholders and/or reveal admin-only UI.
+  function initUI() {
+    if (document.querySelector('[data-player-handle]')) PlayerId.getHandle();
+    else if (document.querySelector('[data-admin-only]')) ensureProfile().then(applyStaffUI);
   }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUI);
+  else initUI();
 })();

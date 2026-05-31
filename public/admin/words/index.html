@@ -56,13 +56,6 @@
     .msg.ok  { color: #22c55e; }
     .msg.err { color: var(--red); }
 
-    /* Player lookup */
-    .sid-input, .sid-select { background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.78rem; font-family: monospace; outline: none; }
-    .sid-select { cursor: pointer; width: 100%; }
-    .sid-select option { background: var(--surface2); }
-    .player-info { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
-    .player-info-text { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem; line-height: 1.6; }
-
     /* Mode tabs */
     .mode-tabs { display: flex; gap: 0.5rem; }
     .mode-tab {
@@ -114,26 +107,6 @@
       <div class="dist-list" id="distList"><p class="msg">Loading…</p></div>
     </div>
   </section>
-
-  <!-- Player Lookup -->
-  <section>
-    <h2>Player Lookup</h2>
-    <select id="sidSelect" class="sid-select">
-      <option value="">— Select a known player —</option>
-    </select>
-    <div style="display:flex;gap:0.5rem;align-items:center">
-      <input id="sidInput" type="text" placeholder="Or paste session ID…" class="sid-input" style="flex:1">
-      <button class="btn btn-default" id="lookupBtn">Look Up</button>
-    </div>
-    <div class="player-info" id="playerInfo">
-      <div class="player-info-text" id="playerInfoText"></div>
-      <div class="btn-group">
-        <button class="btn btn-danger" id="resetStateBtn">Reset Game State</button>
-        <button class="btn btn-danger" id="resetAchBtn">Reset Achievements</button>
-      </div>
-    </div>
-    <p class="msg" id="lookupMsg"></p>
-  </section>
 </div>
 
 <script>
@@ -153,7 +126,6 @@
       selectedMode = tab.dataset.mode;
       document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t === tab));
       loadWordAndStats();
-      document.getElementById('playerInfo').style.display = 'none';
     });
   });
 
@@ -208,71 +180,7 @@
 
   document.getElementById('refreshBtn').addEventListener('click', () => { loadWordAndStats(); });
 
-  // ── Player Lookup ──────────────────────────────────────────────────────────
-  function setLookupMsg(text, type = '') {
-    const el = document.getElementById('lookupMsg');
-    el.textContent = text; el.className = `msg ${type}`;
-  }
-
-  async function populateSidDropdown() {
-    try {
-      const players = await fetch('/admin/api/achievements').then(r => r.json());
-      const sel = document.getElementById('sidSelect');
-      players.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.sid;
-        opt.textContent = `…${p.sid.slice(-12)}  (${p.achievements.length} ach)`;
-        sel.appendChild(opt);
-      });
-    } catch {}
-  }
-
-  document.getElementById('sidSelect').addEventListener('change', function() {
-    if (this.value) { document.getElementById('sidInput').value = this.value; document.getElementById('lookupBtn').click(); }
-  });
-
-  let currentSid = null;
-
-  document.getElementById('lookupBtn').addEventListener('click', async () => {
-    const sid = document.getElementById('sidInput').value.trim();
-    if (!sid) { setLookupMsg('Enter a session ID.', 'err'); return; }
-    currentSid = sid;
-    try {
-      const data = await fetch(`/admin/api/words/player?sid=${encodeURIComponent(sid)}&date=${TODAY}&mode=${selectedMode}`).then(r => r.json());
-      const state = data.state;
-      const achs  = data.achievements || [];
-      const info  = document.getElementById('playerInfoText');
-      if (state) {
-        const status = state.gameOver ? (state.won ? '✅ Won' : '❌ Lost') : '⏳ In progress';
-        info.innerHTML = `<strong>Status:</strong> ${status} · <strong>Guesses:</strong> ${state.guesses?.length ?? 0}<br><strong>Achievements:</strong> ${achs.length}`;
-      } else {
-        info.innerHTML = `No game state for today. <strong>Achievements:</strong> ${achs.length}`;
-      }
-      document.getElementById('playerInfo').style.display = '';
-      setLookupMsg('');
-    } catch { setLookupMsg('Lookup failed.', 'err'); }
-  });
-
-  document.getElementById('resetStateBtn').addEventListener('click', async () => {
-    if (!currentSid || !confirm('Reset this player\'s Words state for today?')) return;
-    try {
-      await fetch(`/admin/api/words/player?sid=${encodeURIComponent(currentSid)}&date=${TODAY}&mode=${selectedMode}`, { method: 'DELETE' });
-      setLookupMsg('Game state reset.', 'ok');
-      document.getElementById('playerInfo').style.display = 'none';
-    } catch { setLookupMsg('Failed.', 'err'); }
-  });
-
-  document.getElementById('resetAchBtn').addEventListener('click', async () => {
-    if (!currentSid || !confirm('Reset achievements for this player?')) return;
-    try {
-      await fetch(`/admin/api/achievements?sid=${encodeURIComponent(currentSid)}`, { method: 'DELETE' });
-      setLookupMsg('Achievements reset.', 'ok');
-      document.getElementById('playerInfo').style.display = 'none';
-    } catch { setLookupMsg('Failed.', 'err'); }
-  });
-
   loadWordAndStats();
-  populateSidDropdown();
 </script>
 </body>
 </html>

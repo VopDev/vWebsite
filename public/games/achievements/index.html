@@ -141,7 +141,10 @@
 <body>
 <div class="page">
   <header style="display:flex;flex-direction:column;gap:0.4rem">
-    <a href="/games/" class="back-link">← Games</a>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <a href="/games/" class="back-link">← Games</a>
+      <a href="/admin" data-admin-only hidden class="back-link" style="color:#ef4444;font-weight:700">⚙ Admin Portal</a>
+    </div>
     <h1>Achievements</h1>
     <p class="subtitle" id="progressLabel">Loading…</p>
   </header>
@@ -377,12 +380,26 @@
       showMsg('');
     }
 
+    // Staff/admins get a red name + a Staff/Admin badge.
+    function renderName() {
+      nameEl.textContent = current.handle || '—';
+      nameEl.style.color = current.staff ? 'var(--red, #ef4444)' : '';
+      if (current.staff) {
+        const b = document.createElement('span');
+        b.textContent = current.role === 'admin' ? 'Admin' : 'Staff';
+        b.style.cssText = 'display:inline-block;margin-left:0.5rem;padding:0.1em 0.45em;font-size:0.6rem;font-weight:800;' +
+          'letter-spacing:0.06em;text-transform:uppercase;color:#ef4444;background:#1a0808;border:1px solid #3d1a1a;' +
+          'border-radius:5px;vertical-align:middle';
+        nameEl.appendChild(b);
+      }
+    }
+
     async function load() {
       try {
         const r = await fetch('/api/profile');
         current = await r.json();
       } catch { current = { handle: '—', custom: false, locked: false }; }
-      nameEl.textContent = current.handle || '—';
+      renderName();
       renderLock();
     }
 
@@ -408,8 +425,8 @@
         const r = await fetch('/api/profile', { method: 'POST', headers, body: JSON.stringify({ name }) });
         const d = await r.json();
         if (!r.ok) { showMsg(d.error || 'Could not save.', 'err'); return; }
-        current = { handle: d.handle, custom: d.custom, locked: d.locked };
-        nameEl.textContent = d.handle;
+        current = { handle: d.handle, custom: d.custom, locked: d.locked, role: d.role, staff: d.staff };
+        renderName();
         showMsg(d.custom ? 'Saved!' : 'Reset to a random name.', 'ok');
         setTimeout(closeEdit, 800);
       } catch (err) {

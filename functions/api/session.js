@@ -1,9 +1,12 @@
-import { identify, applyIdentity, getHandle } from './_identity.js';
+import { identify, applyIdentity, getHandle, getRole } from './_identity.js';
 
 export async function onRequestGet({ request, env }) {
   const ident   = await identify(request, env, { create: true });
   const headers = applyIdentity({ 'Content-Type': 'application/json' }, ident);
-  const handle  = await getHandle(env, ident.sid);
+  const [handle, role] = await Promise.all([
+    getHandle(env, ident.sid),
+    getRole(env, ident.sid),
+  ]);
 
-  return new Response(JSON.stringify({ sid: ident.sid, handle }), { headers });
+  return new Response(JSON.stringify({ sid: ident.sid, handle, role, staff: role !== 'player' }), { headers });
 }
