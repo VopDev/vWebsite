@@ -12,16 +12,21 @@ export async function onRequestGet({ request, env }) {
   const words = await getOrCreateWords(date, env, mode);
   if (i < 0 || i >= words.length) return new Response('Not found', { status: 404 });
 
-  const word   = words[i].word.toLowerCase();
-  const ttsUrl = `https://api.streamelements.com/kappa/v2/speech?voice=Brian&text=${encodeURIComponent(word)}`;
+  const word = words[i].word.toLowerCase();
+  const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${encodeURIComponent(word)}`;
 
   try {
-    const res = await fetch(ttsUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res = await fetch(ttsUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+        'Referer':    'https://translate.google.com/',
+      },
+    });
     if (!res.ok) return new Response('TTS unavailable', { status: 502 });
     return new Response(res.body, {
       headers: {
         'Content-Type':  'audio/mpeg',
-        'Cache-Control': 'public, max-age=3600',
+        'Cache-Control': 'public, max-age=86400',
       },
     });
   } catch {

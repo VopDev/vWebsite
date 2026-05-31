@@ -103,6 +103,10 @@
     </div>
     <div class="card"><div class="pq-list" id="byDifficulty"></div></div>
     <div class="card"><div class="pq-list" id="perQuestion"><p class="msg">No data yet.</p></div></div>
+    <div class="btn-group">
+      <button class="btn btn-danger" id="clearStatsBtn">Clear Analytics</button>
+    </div>
+    <p class="msg" id="statsMsg"></p>
   </section>
 
   <section>
@@ -211,6 +215,16 @@
     } catch { setWordMsg('Failed.', 'err'); }
   });
   document.getElementById('refreshBtn').addEventListener('click', load);
+
+  document.getElementById('clearStatsBtn').addEventListener('click', async () => {
+    const el = document.getElementById('statsMsg');
+    if (!confirm(`Clear all ${selectedMode} analytics for ${TODAY}? This resets player counts and answer stats.`)) return;
+    try {
+      await fetch(`/admin/api/spelling-bee/config?date=${TODAY}&mode=${selectedMode}&type=stats`, { method: 'DELETE' });
+      el.textContent = 'Analytics cleared.'; el.className = 'msg ok';
+      load();
+    } catch { el.textContent = 'Failed.'; el.className = 'msg err'; }
+  });
 
   // Player lookup
   function setLookupMsg(t, type='') { const el = document.getElementById('lookupMsg'); el.textContent = t; el.className = `msg ${type}`; }
