@@ -100,6 +100,8 @@
     .ach-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem; display: flex; align-items: flex-start; gap: 0.85rem; transition: border-color 0.15s; }
     .ach-card.unlocked { border-color: var(--border2); }
     .ach-card.locked { opacity: 0.35; }
+    .ach-card.secret.locked { opacity: 0.6; border-style: dashed; }
+    .ach-card.secret.locked .ach-title { letter-spacing: 0.2em; color: var(--muted); }
     .ach-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
     .ach-card.locked .ach-icon { filter: grayscale(1); }
     .ach-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
@@ -126,7 +128,7 @@
     </div>
   </div>
 
-  <div class="seed-timer">New seed in <strong id="seedTimerVal">…</strong> · Made with ♥ by Vopori</div>
+  <div class="seed-timer">New seed in <strong id="seedTimerVal">…</strong> · Made with <span class="egg-heart">♥</span> by Vopori</div>
 </div>
 
 <script>
@@ -193,12 +195,18 @@
 
     document.getElementById('rankPanel').innerHTML = `
       <div class="rank-current" style="--rank-color:${current.color};--rank-glow:${current.glow}">
-        <div class="rank-emblem">${current.icon}</div>
+        <div class="rank-emblem" id="rankEmblem" style="cursor:pointer">${current.icon}</div>
         <div class="rank-name">${current.name}</div>
         <div class="rank-pct"><strong>${pct}%</strong> complete</div>
       </div>
       ${nextHtml}
       <div class="rank-ladder">${ladder}</div>`;
+
+    // Easter egg: click the emblem 5 times
+    let emblemClicks = 0;
+    document.getElementById('rankEmblem').addEventListener('click', () => {
+      if (++emblemClicks >= 5) { emblemClicks = 0; eggUnlock('egg_collector'); }
+    });
   }
 
   async function init() {
@@ -228,11 +236,15 @@
         const dateStr = entry
           ? new Date(entry.unlockedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
           : null;
-        return `<div class="ach-card ${entry ? 'unlocked' : 'locked'}">
-          <div class="ach-icon">${a.icon}</div>
+        const hidden = a.secret && !entry;
+        const icon   = hidden ? '❓' : a.icon;
+        const title  = hidden ? '???' : a.title;
+        const desc   = hidden ? (a.hint || 'Hidden achievement') : a.desc;
+        return `<div class="ach-card ${entry ? 'unlocked' : 'locked'}${a.secret ? ' secret' : ''}">
+          <div class="ach-icon">${icon}</div>
           <div class="ach-info">
-            <div class="ach-title">${a.title}</div>
-            <div class="ach-desc">${a.desc}</div>
+            <div class="ach-title">${title}</div>
+            <div class="ach-desc">${desc}</div>
             ${dateStr ? `<div class="ach-date">Unlocked ${dateStr}</div>` : ''}
           </div>
         </div>`;

@@ -3,6 +3,7 @@ const TTL    = 60 * 60 * 24 * 120; // 120 days
 
 const PLAY_THRESHOLDS   = [1, 5, 10, 50];
 const STREAK_THRESHOLDS = [1, 5, 10, 50];
+const ALL_GAMES         = ['songquiz', 'chatter-quiz', 'words', 'spelling-bee'];
 
 function getSid(request) {
   return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
@@ -16,6 +17,10 @@ function qualifiedIds(stats) {
   const ids = [];
   for (const t of PLAY_THRESHOLDS)   if ((stats.totalPlays || 0) >= t) ids.push(`global_play_${t}`);
   for (const t of STREAK_THRESHOLDS) if ((stats.streak     || 0) >= t) ids.push(`global_streak_${t}`);
+  const played = stats.played || [];
+  const lost   = stats.lost   || [];
+  if (ALL_GAMES.every(g => played.includes(g))) ids.push('global_all_games');
+  if (ALL_GAMES.every(g => lost.includes(g)))   ids.push('global_all_losses');
   return ids;
 }
 
@@ -33,6 +38,7 @@ export async function onRequestPost({ request, env }) {
 
   const { game, date } = body;
   const mode = body.mode === 'hard' ? 'hard' : 'normal';
+  const lost = body.lost === true;
 
   let sid = getSid(request);
   const headers = { 'Content-Type': 'application/json' };
@@ -46,10 +52,16 @@ export async function onRequestPost({ request, env }) {
     env.SONGLESS_KV.get(dedupKey),
   ]);
 
-  const stats = statsRaw || { totalPlays: 0, streak: 0, longestStreak: 0, lastPlayDate: null };
+  const stats = statsRaw || { totalPlays: 0, streak: 0, longestStreak: 0, lastPlayDate: null, played: [], lost: [] };
 
   if (!alreadyCounted) {
     stats.totalPlays = (stats.totalPlays || 0) + 1;
+
+    // Track distinct games played / lost (for "every game" achievements)
+    stats.played = stats.played || [];
+    if (!stats.played.includes(game)) stats.played.push(game);
+    stats.lost = stats.lost || [];
+    if (lost && !stats.lost.includes(game)) stats.lost.push(game);
 
     // Streak — consecutive distinct days with at least one completion
     if (!stats.lastPlayDate) {

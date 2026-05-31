@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spelling Bee — Daily Word Game</title>
+  <link rel="stylesheet" href="/games/spelling-bee/style.css" />
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="header-top">
+      <a href="/games/" class="back-link">← Games</a>
+      <div class="seed-widget" id="seedWidget">
+        <button class="seed-btn" id="seedBtn" title="Info" style="display:none">ⓘ</button>
+        <div class="seed-popup" id="seedPopup">
+          <div class="seed-popup-label">Today's Seed</div>
+          <div class="seed-popup-code" id="seedCode"></div>
+          <div class="seed-popup-label" style="margin-top:0.6rem">Session ID</div>
+          <div class="seed-popup-code" id="sidCode" style="font-size:0.7rem;color:var(--muted)">—</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+      <h1>🐝 Spelling Bee</h1>
+      <span class="hard-badge" id="hardBadge" style="display:none">⚡ Hard</span>
+    </div>
+    <p class="subtitle" id="subtitle">Hear it, spell it · 10 words, getting harder</p>
+  </header>
+
+  <p class="msg" id="loading">Loading today's words…</p>
+  <p class="msg error" id="error" style="display:none"></p>
+
+  <div id="game" style="display:none; flex-direction:column; gap:1.25rem">
+    <div class="progress-row">
+      <div class="progress-dots" id="progressDots"></div>
+      <span class="progress-label" id="progressLabel">1 / 10</span>
+    </div>
+
+    <div class="word-card" id="wordCard">
+      <span class="difficulty-badge" id="difficultyBadge">Easy</span>
+      <button class="play-btn" id="playBtn" aria-label="Play word">
+        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg>
+      </button>
+      <span class="play-hint" id="playHint">Tap to hear the word</span>
+      <div class="word-info" id="wordInfo" style="display:none">
+        <div class="info-line"><span class="info-label">Origin</span><span id="wordOrigin">—</span></div>
+        <div class="info-line"><span class="info-label">Definition</span><span id="wordDef">—</span></div>
+      </div>
+      <div class="reveal">
+        <div class="reveal-status" id="revealStatus"></div>
+        <div class="reveal-word" id="revealWord"></div>
+        <div class="reveal-your" id="revealYour"></div>
+      </div>
+    </div>
+
+    <div class="spell-input-row" id="inputRow">
+      <input class="spell-input" id="spellInput" type="text" placeholder="Type the spelling…"
+             autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
+      <div class="buttons">
+        <button class="btn btn-skip" id="skipBtn">Skip</button>
+        <button class="btn btn-submit" id="submitBtn" disabled>Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="results-score" id="resultsScore"></div>
+    <div class="results-rows" id="resultsRows"></div>
+    <div class="results-actions">
+      <button class="btn-share" id="shareBtn">Copy Result</button>
+    </div>
+  </div>
+
+  <div class="seed-timer">New seed in <strong id="seedTimerVal">…</strong> · Made with <span class="egg-heart">♥</span> by Vopori</div>
+</div>
+
+<audio id="audio" preload="auto"></audio>
+<div id="toastContainer" style="position:fixed;top:1rem;right:1rem;z-index:999;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none"></div>
+
+<script src="/games/achievements.js"></script>
+<script src="game.js"></script>
+<script>
+  (function() {
+    function tick() {
+      const now = Date.now();
+      const next = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
+      const ms = next - now;
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      document.getElementById('seedTimerVal').textContent =
+        `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+    }
+    tick(); setInterval(tick, 1000);
+  })();
+</script>
+</body>
+</html>

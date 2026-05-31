@@ -188,7 +188,7 @@ function checkAchievements(won, guessNum, answer) {
   }
 
   // Completing the game (win or lose) counts toward global play/streak achievements
-  recordGlobalCompletion('words', TODAY, MODE).then(globalIds => {
+  recordGlobalCompletion('words', TODAY, MODE, !won).then(globalIds => {
     unlockAchievements([...earn, ...globalIds]);
   });
 }

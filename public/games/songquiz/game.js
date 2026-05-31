@@ -429,9 +429,11 @@ function checkAchievements(game, slot) {
     }
   }
 
-  // Finishing all songs for the day counts toward global play/streak achievements
+  // Finishing all songs for the day counts toward global play/streak achievements;
+  // "lost" = didn't win at least one song
   if (state.games.every(g => g.over)) {
-    recordGlobalCompletion('songquiz', TODAY, MODE).then(globalIds => unlockAchievements([...earn, ...globalIds]));
+    const lost = state.games.some(g => !g.won);
+    recordGlobalCompletion('songquiz', TODAY, MODE, lost).then(globalIds => unlockAchievements([...earn, ...globalIds]));
   } else {
     unlockAchievements(earn);
   }

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spelling Bee Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --surface: #111; --surface2: #1a1a1a;
+      --border: #222; --border2: #333; --text: #f0f0f0; --muted: #555;
+      --green: #22c55e; --red: #ef4444; --honey: #f5a623;
+    }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 2rem 1rem 5rem; display: flex; flex-direction: column; align-items: center; }
+    .page { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 2rem; }
+    a.back { color: var(--muted); text-decoration: none; font-size: 0.78rem; letter-spacing: 0.05em; }
+    a.back:hover { color: var(--text); }
+    h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
+    h2 { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    section { display: flex; flex-direction: column; gap: 0.75rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .seed-line { font-size: 0.7rem; color: var(--muted); font-family: monospace; letter-spacing: 0.1em; }
+
+    .word-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+    .word-row:last-child { border-bottom: none; }
+    .word-num { color: var(--muted); font-size: 0.7rem; width: 18px; flex-shrink: 0; }
+    .word-text { font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
+    .word-diff { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.12rem 0.4rem; border-radius: 4px; border: 1px solid var(--border2); color: var(--muted); }
+    .word-diff.easy { color: #4ade80; border-color: #15803d; }
+    .word-diff.medium { color: #facc15; border-color: #a16207; }
+    .word-diff.hard { color: #fb923c; border-color: #c2410c; }
+    .word-diff.impossible { color: #f472b6; border-color: #be185d; }
+    .word-diff.hard_impossible { color: #c084fc; border-color: #7e22ce; }
+
+    .mode-tabs { display: flex; gap: 0.5rem; }
+    .mode-tab { padding: 0.4rem 1rem; border-radius: 7px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; background: var(--surface2); color: var(--muted); border: 1px solid var(--border2); transition: border-color 0.15s, color 0.15s; }
+    .mode-tab.active { color: var(--text); border-color: #4a4a4a; }
+    .mode-tab.hard.active { color: var(--red); border-color: #3d1a1a; background: #1a0808; }
+    .play-mini { background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; color: var(--honey); cursor: pointer; font-size: 0.85rem; padding: 0.15rem 0.45rem; }
+    .play-mini:hover { border-color: var(--honey); }
+
+    .btn { padding: 0.5rem 1rem; border-radius: 7px; font-size: 0.73rem; font-weight: 700; cursor: pointer; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid var(--border2); transition: border-color 0.15s, background 0.15s; white-space: nowrap; }
+    .btn-default { background: var(--surface2); color: var(--text); }
+    .btn-default:hover { border-color: #4a4a4a; }
+    .btn-danger { background: #1a0808; color: var(--red); border-color: #3d1a1a; }
+    .btn-danger:hover { background: #2a1010; }
+    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.6rem; }
+    .stat-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; text-align: center; }
+    .stat-tile .val { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+    .stat-tile .lbl { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .stat-tile .sub { font-size: 0.65rem; color: var(--muted); }
+
+    .pq-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pq-row { display: flex; flex-direction: column; gap: 0.2rem; }
+    .pq-label { font-size: 0.65rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .pq-bar-track { height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; display: flex; }
+    .pq-bar-correct { background: var(--green); height: 100%; }
+    .pq-bar-wrong { background: var(--red); height: 100%; }
+
+    .msg { font-size: 0.75rem; color: var(--muted); min-height: 1.2em; }
+    .msg.ok { color: var(--green); }
+    .msg.err { color: var(--red); }
+
+    .sid-input, .sid-select { background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.78rem; font-family: monospace; outline: none; }
+    .sid-select { cursor: pointer; width: 100%; }
+    .player-info { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+    .player-info-text { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header style="display:flex;flex-direction:column;gap:0.4rem">
+    <a href="/admin/" class="back">← Admin</a>
+    <h1>Spelling Bee Admin — <span id="dateLabel"></span></h1>
+  </header>
+
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="normal">Normal</div>
+    <div class="mode-tab hard" data-mode="hard">⚡ Hard</div>
+  </div>
+
+  <section>
+    <h2>Today's Words</h2>
+    <div class="card" id="wordsCard"><p class="msg">Loading…</p></div>
+    <div class="seed-line" id="seedLine"></div>
+    <div class="btn-group">
+      <button class="btn btn-default" id="resetSeedBtn">New Seed / New Words</button>
+      <button class="btn btn-default" id="refreshBtn">Refresh</button>
+    </div>
+    <p class="msg" id="wordMsg"></p>
+  </section>
+
+  <section>
+    <h2>Today's Stats</h2>
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="val" id="sPlayers">—</div><div class="lbl">Players</div></div>
+      <div class="stat-tile"><div class="val" id="sComplete">—</div><div class="lbl">Completed</div></div>
+      <div class="stat-tile"><div class="val" id="sCorrect">—</div><div class="lbl">Correct</div><div class="sub" id="sCorrectPct"></div></div>
+      <div class="stat-tile"><div class="val" id="sWrong">—</div><div class="lbl">Wrong</div></div>
+    </div>
+    <div class="card"><div class="pq-list" id="byDifficulty"></div></div>
+    <div class="card"><div class="pq-list" id="perQuestion"><p class="msg">No data yet.</p></div></div>
+  </section>
+
+  <section>
+    <h2>Player Lookup</h2>
+    <select id="sidSelect" class="sid-select"><option value="">— Select a known player —</option></select>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input id="sidInput" type="text" placeholder="Or paste session ID…" class="sid-input" style="flex:1">
+      <button class="btn btn-default" id="lookupBtn">Look Up</button>
+    </div>
+    <div class="player-info" id="playerInfo">
+      <div class="player-info-text" id="playerInfoText"></div>
+      <div class="btn-group">
+        <button class="btn btn-danger" id="resetStateBtn">Reset Game State</button>
+        <button class="btn btn-danger" id="resetAchBtn">Reset Achievements</button>
+      </div>
+    </div>
+    <p class="msg" id="lookupMsg"></p>
+  </section>
+</div>
+
+<audio id="audio"></audio>
+<script>
+  function todayStr() {
+    const n = new Date();
+    return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
+  }
+  function pct(n, d) { return d ? Math.round(n / d * 100) + '%' : '—'; }
+
+  const TODAY = todayStr();
+  const audio = document.getElementById('audio');
+  document.getElementById('dateLabel').textContent = TODAY;
+
+  const DIFF_LABEL = { easy: 'Easy', medium: 'Medium', hard: 'Hard', impossible: 'Impossible', hard_impossible: 'Nightmare' };
+  let selectedMode = 'normal';
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      selectedMode = tab.dataset.mode;
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t === tab));
+      load();
+      document.getElementById('playerInfo').style.display = 'none';
+    });
+  });
+
+  function setWordMsg(t, type='') { const el = document.getElementById('wordMsg'); el.textContent = t; el.className = `msg ${type}`; if (t) setTimeout(() => { if (el.textContent === t) { el.textContent=''; el.className='msg'; } }, 3000); }
+
+  function playWord(i) { audio.src = `/api/spelling-bee/audio?date=${TODAY}&i=${i}&mode=${selectedMode}`; audio.play().catch(()=>{}); }
+
+  function renderWords(words) {
+    document.getElementById('wordsCard').innerHTML = words.map((w, i) => `
+      <div class="word-row">
+        <span class="word-num">${i+1}</span>
+        <span class="word-text">${w.word}</span>
+        <span class="word-diff ${w.difficulty}">${DIFF_LABEL[w.difficulty] || w.difficulty}</span>
+        <button class="play-mini" onclick="playWord(${i})">▶</button>
+      </div>`).join('');
+  }
+
+  function renderStats(stats) {
+    const s = stats || { uniquePlayers:0, completions:0, correct:0, wrong:0, perQuestion:[], byDifficulty:{} };
+    const total = (s.correct||0) + (s.wrong||0);
+    document.getElementById('sPlayers').textContent  = s.uniquePlayers ?? 0;
+    document.getElementById('sComplete').textContent = s.completions ?? 0;
+    document.getElementById('sCorrect').textContent  = s.correct ?? 0;
+    document.getElementById('sCorrectPct').textContent = pct(s.correct, total);
+    document.getElementById('sWrong').textContent    = s.wrong ?? 0;
+
+    const diffs = selectedMode === 'hard'
+      ? ['easy','medium','hard','impossible','hard_impossible']
+      : ['easy','medium','hard','impossible'];
+    document.getElementById('byDifficulty').innerHTML = diffs.map(d => {
+      const v = (s.byDifficulty && s.byDifficulty[d]) || { correct:0, wrong:0 };
+      const t = v.correct + v.wrong;
+      return `<div class="pq-row">
+        <div class="pq-label"><span>${DIFF_LABEL[d] || d}</span><span>${v.correct} ✓ · ${v.wrong} ✗</span></div>
+        <div class="pq-bar-track"><div class="pq-bar-correct" style="width:${t?v.correct/t*100:0}%"></div><div class="pq-bar-wrong" style="width:${t?v.wrong/t*100:0}%"></div></div>
+      </div>`;
+    }).join('');
+
+    const pq = s.perQuestion || [];
+    document.getElementById('perQuestion').innerHTML = pq.length ? pq.map((q, i) => {
+      const t = (q.correct||0) + (q.wrong||0);
+      return `<div class="pq-row">
+        <div class="pq-label"><span>Q${i+1}</span><span>${q.correct||0} ✓ · ${q.wrong||0} ✗</span></div>
+        <div class="pq-bar-track"><div class="pq-bar-correct" style="width:${t?q.correct/t*100:0}%"></div><div class="pq-bar-wrong" style="width:${t?q.wrong/t*100:0}%"></div></div>
+      </div>`;
+    }).join('') : '<p class="msg">No answers recorded yet.</p>';
+  }
+
+  async function load() {
+    try {
+      const data = await fetch(`/admin/api/spelling-bee/config?date=${TODAY}&mode=${selectedMode}`).then(r => r.json());
+      renderWords(data.words || []);
+      document.getElementById('seedLine').textContent = data.seed ? `Seed: ${data.seed.match(/.{4}/g).join(' ')}` : '';
+      renderStats(data.stats);
+    } catch { document.getElementById('wordsCard').innerHTML = '<p class="msg err">Failed to load.</p>'; }
+  }
+
+  document.getElementById('resetSeedBtn').addEventListener('click', async () => {
+    if (!confirm('Generate a new seed and word set for today? Active players will get different words.')) return;
+    try {
+      const data = await fetch(`/admin/api/spelling-bee/config?date=${TODAY}&mode=${selectedMode}`, { method: 'DELETE' }).then(r => r.json());
+      renderWords(data.words || []);
+      document.getElementById('seedLine').textContent = data.seed ? `Seed: ${data.seed.match(/.{4}/g).join(' ')}` : '';
+      setWordMsg('New seed and words generated.', 'ok');
+    } catch { setWordMsg('Failed.', 'err'); }
+  });
+  document.getElementById('refreshBtn').addEventListener('click', load);
+
+  // Player lookup
+  function setLookupMsg(t, type='') { const el = document.getElementById('lookupMsg'); el.textContent = t; el.className = `msg ${type}`; }
+
+  async function populateSidDropdown() {
+    try {
+      const players = await fetch('/admin/api/achievements').then(r => r.json());
+      const sel = document.getElementById('sidSelect');
+      players.forEach(p => { const o = document.createElement('option'); o.value = p.sid; o.textContent = `…${p.sid.slice(-12)}  (${p.achievements.length} ach)`; sel.appendChild(o); });
+    } catch {}
+  }
+  document.getElementById('sidSelect').addEventListener('change', function() { if (this.value) { document.getElementById('sidInput').value = this.value; document.getElementById('lookupBtn').click(); } });
+
+  let currentSid = null;
+  document.getElementById('lookupBtn').addEventListener('click', async () => {
+    const sid = document.getElementById('sidInput').value.trim();
+    if (!sid) { setLookupMsg('Enter a session ID.', 'err'); return; }
+    currentSid = sid;
+    try {
+      const data = await fetch(`/admin/api/spelling-bee/player?sid=${encodeURIComponent(sid)}&date=${TODAY}&mode=${selectedMode}`).then(r => r.json());
+      const state = data.state, achs = data.achievements || [];
+      const info = document.getElementById('playerInfoText');
+      if (state) {
+        const answered = (state.answers || []).filter(Boolean).length;
+        const correct  = (state.answers || []).filter(a => a && a.correct).length;
+        const status = state.gameOver ? `Done — ${correct}/${answered} correct` : `In progress (${answered} answered)`;
+        info.innerHTML = `<strong>Status:</strong> ${status}<br><strong>Achievements:</strong> ${achs.length}`;
+      } else { info.innerHTML = `No game state for today. <strong>Achievements:</strong> ${achs.length}`; }
+      document.getElementById('playerInfo').style.display = '';
+      setLookupMsg('');
+    } catch { setLookupMsg('Lookup failed.', 'err'); }
+  });
+  document.getElementById('resetStateBtn').addEventListener('click', async () => {
+    if (!currentSid || !confirm('Reset this player\'s Spelling Bee state for today?')) return;
+    try { await fetch(`/admin/api/spelling-bee/player?sid=${encodeURIComponent(currentSid)}&date=${TODAY}&mode=${selectedMode}`, { method: 'DELETE' }); setLookupMsg('Game state reset.', 'ok'); document.getElementById('playerInfo').style.display = 'none'; } catch { setLookupMsg('Failed.', 'err'); }
+  });
+  document.getElementById('resetAchBtn').addEventListener('click', async () => {
+    if (!currentSid || !confirm('Reset achievements for this player?')) return;
+    try { await fetch(`/admin/api/achievements?sid=${encodeURIComponent(currentSid)}`, { method: 'DELETE' }); setLookupMsg('Achievements reset.', 'ok'); document.getElementById('playerInfo').style.display = 'none'; } catch { setLookupMsg('Failed.', 'err'); }
+  });
+
+  load();
+  populateSidDropdown();
+</script>
+</body>
+</html>

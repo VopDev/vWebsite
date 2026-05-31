@@ -72,8 +72,10 @@ function checkAchievements(correct, elapsedMs) {
   }
 
   if (isComplete) {
-    // Finishing the quiz counts toward global play/streak achievements
-    recordGlobalCompletion('chatter-quiz', TODAY).then(globalIds => unlockAchievements([...earn, ...globalIds]));
+    // Finishing the quiz counts toward global play/streak achievements;
+    // "lost" = got at least one question wrong
+    const lost = log.filter(a => a.correct).length < questions.length;
+    recordGlobalCompletion('chatter-quiz', TODAY, 'normal', lost).then(globalIds => unlockAchievements([...earn, ...globalIds]));
   } else {
     unlockAchievements(earn);
   }

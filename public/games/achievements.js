@@ -8,6 +8,8 @@
   { id: 'global_streak_5',  game: 'Global', icon: '🔥', title: 'On a Streak',     desc: 'Play 5 days in a row' },
   { id: 'global_streak_10', game: 'Global', icon: '⚡', title: 'Unstoppable',     desc: 'Play 10 days in a row' },
   { id: 'global_streak_50', game: 'Global', icon: '💎', title: 'Devoted',         desc: 'Play 50 days in a row' },
+  { id: 'global_all_games', game: 'Global', icon: '🌐', title: 'Jack of All',     desc: 'Play every game at least once' },
+  { id: 'global_all_losses',game: 'Global', icon: '💀', title: 'Rough Week',      desc: 'Lose every game at least once' },
 
   // ── SongQuiz ──────────────────────────────────────────────────────────────
   { id: 'songless_first',      game: 'SongQuiz', icon: '🎵', title: 'First Note',      desc: 'Win your first SongQuiz song' },
@@ -61,19 +63,87 @@
   { id: 'words_hard_clutch',    game: 'Words', icon: '🎲', title: 'Clutch 5',       desc: 'Win on the 5th and final guess in Hard Mode' },
   { id: 'words_beat_clock',     game: 'Words', icon: '⏱️', title: 'Clockwork',      desc: 'Win in Hard Mode with 30 or more seconds left' },
   { id: 'words_hard_lightning', game: 'Words', icon: '⚡', title: 'Hard Lightning', desc: 'Win in Hard Mode in under 20 seconds' },
+
+  // ── Spelling Bee ───────────────────────────────────────────────────────────
+  { id: 'spelling_first',      game: 'Spelling Bee', icon: '🐝', title: 'First Buzz',        desc: 'Spell your first word correctly' },
+  { id: 'spelling_half',       game: 'Spelling Bee', icon: '✏️', title: 'Halfway There',     desc: 'Spell 5 or more words correctly in a day' },
+  { id: 'spelling_scholar',    game: 'Spelling Bee', icon: '📚', title: 'Honor Roll',        desc: 'Spell 9 of 10 words correctly' },
+  { id: 'spelling_perfect',    game: 'Spelling Bee', icon: '🏆', title: 'Spelling Champion', desc: 'Spell all 10 words correctly' },
+  { id: 'spelling_easy_sweep', game: 'Spelling Bee', icon: '🌱', title: 'Warm Up',           desc: 'Spell all 3 easy words correctly' },
+  { id: 'spelling_hard_sweep', game: 'Spelling Bee', icon: '💪', title: 'Wordsmith',         desc: 'Spell all 3 hard words correctly' },
+  { id: 'spelling_impossible', game: 'Spelling Bee', icon: '🤯', title: 'The Impossible',    desc: 'Spell the impossible word correctly' },
+  { id: 'spelling_streak_5',   game: 'Spelling Bee', icon: '🔥', title: 'Buzzing',           desc: 'Spell 5 words correctly in a row' },
+  { id: 'spelling_hot_start',  game: 'Spelling Bee', icon: '🚀', title: 'Strong Start',      desc: 'Spell the first 5 words correctly' },
+  { id: 'spelling_clueless',   game: 'Spelling Bee', icon: '🤡', title: 'Buzzed Out',        desc: 'Get all 10 words wrong' },
+
+  // ── Secret (easter eggs) ───────────────────────────────────────────────────
+  // `secret: true` → shown as "???" with `hint` until unlocked.
+  { id: 'egg_heart',     game: 'Secret', icon: '💌', title: 'Heartfelt',   desc: 'You clicked the heart that makes it all worthwhile', secret: true, hint: 'Some love is hiding in the footer…' },
+  { id: 'egg_collector', game: 'Secret', icon: '💎', title: 'Treasure Hunter', desc: 'You found the secret in your rank emblem', secret: true, hint: 'That shiny emblem looks clickable…' },
+  { id: 'egg_konami',    game: 'Secret', icon: '🎮', title: 'Old School',  desc: 'You entered the legendary code', secret: true, hint: '↑ ↑ ↓ ↓ … you know the rest' },
 ];
 
-// Records a completed game globally (total plays + day streak) and returns the
-// list of global achievement IDs the player now qualifies for. Deduped server-side
-// per game+date+mode, so calling it again for the same finished game is a no-op.
-async function recordGlobalCompletion(game, date, mode = 'normal') {
+// ── Global completion (play count + day streak) ────────────────────────────────
+// Records a finished game and returns the global achievement IDs the player now
+// qualifies for. Deduped server-side per game+date+mode.
+async function recordGlobalCompletion(game, date, mode = 'normal', lost = false) {
   try {
     const res  = await fetch('/api/global-stats', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ game, date, mode }),
+      body: JSON.stringify({ game, date, mode, lost }),
     });
     const data = await res.json();
     return data.qualified || [];
   } catch { return []; }
 }
+
+// ── Easter eggs (self-contained unlock + toast, works on any page) ─────────────
+async function eggUnlock(id) {
+  try {
+    const res  = await fetch('/api/achievements', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([id]),
+    });
+    const data = await res.json();
+    if ((data.unlocked || []).includes(id)) eggToast(id);
+  } catch {}
+}
+
+function eggToast(id) {
+  const def = ALL_ACHIEVEMENTS.find(a => a.id === id);
+  if (!def) return;
+  let wrap = document.getElementById('eggToastWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'eggToastWrap';
+    wrap.style.cssText = 'position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none';
+    document.body.appendChild(wrap);
+  }
+  const toast = document.createElement('div');
+  toast.style.cssText = 'display:flex;align-items:center;gap:0.75rem;background:#1a1a1a;border:1px solid #b58a00;border-radius:10px;padding:0.75rem 1rem;min-width:220px;max-width:280px;box-shadow:0 4px 24px rgba(0,0,0,0.6);transform:translateX(110%);opacity:0;transition:transform 0.3s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;';
+  toast.innerHTML = `<span style="font-size:1.5rem">${def.icon}</span><div><div style="font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#f59e0b">★ Secret unlocked</div><div style="font-size:0.85rem;font-weight:700;color:#f0f0f0">${def.title}</div><div style="font-size:0.7rem;color:#888">${def.desc}</div></div>`;
+  wrap.appendChild(toast);
+  requestAnimationFrame(() => requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; toast.style.opacity = '1'; }));
+  setTimeout(() => { toast.style.transform = 'translateX(110%)'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 350); }, 4500);
+}
+
+function initEasterEggs() {
+  // Footer heart — click the ♥
+  document.querySelectorAll('.egg-heart').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => eggUnlock('egg_heart'));
+  });
+
+  // Konami code — ↑↑↓↓←→←→ b a
+  const seq = ['arrowup','arrowup','arrowdown','arrowdown','arrowleft','arrowright','arrowleft','arrowright','b','a'];
+  let pos = 0;
+  document.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === seq[pos]) { pos++; if (pos === seq.length) { pos = 0; eggUnlock('egg_konami'); } }
+    else { pos = (k === seq[0]) ? 1 : 0; }
+  });
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initEasterEggs);
+else initEasterEggs();
