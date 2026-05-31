@@ -33,7 +33,7 @@ body {
 }
 
 @media (min-width: 700px) {
-  .page { max-width: 640px; }
+  .page { max-width: 740px; }
 }
 
 /* ── Seed timer ──────────────────────────────────────────────────────────────── */

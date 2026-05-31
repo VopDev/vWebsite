@@ -33,7 +33,7 @@ body {
 }
 
 @media (min-width: 700px) {
-  .page { max-width: 660px; }
+  .page { max-width: 760px; }
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────────── */

@@ -19,7 +19,7 @@ body {
   display: flex; flex-direction: column; gap: 1rem;
 }
 
-@media (min-width: 700px) { .page { max-width: 600px; } }
+@media (min-width: 700px) { .page { max-width: 700px; } }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 header { display: flex; flex-direction: column; gap: 0.3rem; }
