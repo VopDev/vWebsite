@@ -255,7 +255,7 @@ function showResult(won) {
 
 // ── Input handling ────────────────────────────────────────────────────────────
 function handleKey(key) {
-  if (gameOver) return;
+  if (gameOver || validating) return;
 
   if (key === '⌫' || key === 'Backspace') {
     current = current.slice(0, -1);
@@ -264,7 +264,7 @@ function handleKey(key) {
   }
 
   if (key === 'ENTER' || key === 'Enter') {
-    submitGuess();
+    submitGuess(); // async, intentionally not awaited from key handler
     return;
   }
 
@@ -277,9 +277,26 @@ function handleKey(key) {
   }
 }
 
-function submitGuess() {
+let validating = false;
+
+async function isValidWord(word) {
+  try {
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
+    return res.ok;
+  } catch {
+    return true; // fail open if API is unavailable
+  }
+}
+
+async function submitGuess() {
+  if (validating || gameOver) return;
   if (current.length < COLS) { showToast('Not enough letters'); shakeRow(guesses.length); return; }
-  if (!ALL_WORDS.has(current.toLowerCase())) { showToast('Not in word list'); shakeRow(guesses.length); return; }
+
+  validating = true;
+  const valid = await isValidWord(current);
+  validating = false;
+
+  if (!valid) { showToast('Not a valid word'); shakeRow(guesses.length); return; }
 
   const row    = guesses.length;
   const result = evaluate(current);
