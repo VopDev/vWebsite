@@ -167,8 +167,8 @@ export async function onRequestGet({ request, env }) {
           if (!r.ok) return null;
           const data = await r.json();
           const msgs = (data.messages || [])
-            .map(m => (m.text || m.message || '').trim())
-            .filter(interesting);
+            .map(m => ({ text: (m.text || m.message || '').trim(), ts: m.timestamp || null }))
+            .filter(m => interesting(m.text));
           return msgs.length >= 3 ? { ...c, messages: msgs } : null;
         } catch { return null; }
       })
@@ -195,15 +195,15 @@ export async function onRequestGet({ request, env }) {
       if (questions.length >= QUESTIONS) break;
       const others = shuffle(pool.filter(c => c.username !== chatter.username), rand);
       if (others.length < 3) continue;
-      const available = chatter.messages.filter(m => !usedMessages.has(m));
+      const available = chatter.messages.filter(m => !usedMessages.has(m.text));
       if (available.length === 0) continue;
-      const msg = available[Math.floor(rand() * available.length)];
-      usedMessages.add(msg);
+      const msgObj = available[Math.floor(rand() * available.length)];
+      usedMessages.add(msgObj.text);
       const options = shuffle([
         { username: chatter.username, display: chatter.display },
         ...others.slice(0, 3).map(c => ({ username: c.username, display: c.display })),
       ], rand);
-      questions.push({ text: msg, answer: chatter.username, options });
+      questions.push({ text: msgObj.text, timestamp: msgObj.ts, answer: chatter.username, options });
     }
   }
 

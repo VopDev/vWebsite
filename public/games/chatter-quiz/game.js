@@ -71,7 +71,8 @@ function checkAchievements(correct, elapsedMs) {
     }
     if (correctCount === 0) unlockAchievement('chatquiz_clueless');
     if (correctCount === questions.length - 1) unlockAchievement('chatquiz_scholar');
-    if (totalElapsed <= 30000) unlockAchievement('chatquiz_speed_run');
+    if (totalElapsed <= 30000)  unlockAchievement('chatquiz_speed_run');
+    if (hintsUsedTotal === 0)   unlockAchievement('chatquiz_no_hints');
 
     // Clutch: missed Q1, got last question right
     if (!log[0].correct && log[log.length - 1].correct) unlockAchievement('chatquiz_clutch');
@@ -96,18 +97,20 @@ function renderMessage(text) {
 
 const TODAY = todayStr();
 
-let questions     = [];
-let emotes        = {};
-let current       = 0;
-let log           = [];
-let questionStart = 0;
-let totalElapsed  = 0;
+let questions      = [];
+let emotes         = {};
+let current        = 0;
+let log            = [];
+let questionStart  = 0;
+let totalElapsed   = 0;
+let hintsLeft      = 3;
+let hintsUsedTotal = 0;
 
 function save() {
   fetch('/api/chatter-quiz/state', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ date: TODAY, state: { current, log } }),
+    body: JSON.stringify({ date: TODAY, state: { current, log, hintsLeft, hintsUsedTotal } }),
   }).catch(() => {});
 }
 
@@ -115,9 +118,34 @@ async function loadState() {
   try {
     const res = await fetch(`/api/chatter-quiz/state?date=${TODAY}`);
     const s   = await res.json();
-    if (s && Array.isArray(s.log)) { log = s.log; current = s.current ?? log.length; return true; }
+    if (s && Array.isArray(s.log)) {
+      log            = s.log;
+      current        = s.current ?? log.length;
+      hintsLeft      = s.hintsLeft ?? 3;
+      hintsUsedTotal = s.hintsUsedTotal ?? 0;
+      return true;
+    }
   } catch {}
   return false;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatTimestamp(ts) {
+  if (!ts) return '';
+  try {
+    const d = new Date(ts);
+    const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return `${date} · ${time}`;
+  } catch { return ''; }
+}
+
+function updateHintButton() {
+  const btn   = document.getElementById('hintBtn');
+  const count = document.getElementById('hintCount');
+  if (!btn) return;
+  count.textContent = hintsLeft;
+  btn.disabled = hintsLeft <= 0;
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -142,6 +170,8 @@ function renderQuestion() {
   card.classList.remove('revealed');
   card.querySelector('.reveal-author').innerHTML = '';
   document.getElementById('messageText').innerHTML = renderMessage(q.text);
+  document.getElementById('msgTimestamp').textContent = formatTimestamp(q.timestamp);
+  updateHintButton();
 
   const grid = document.getElementById('answers');
   grid.innerHTML = q.options.map(opt =>
@@ -178,7 +208,8 @@ function handleAnswer(selectedUsername) {
   const correct = selectedUsername === q.answer;
   const answer  = q.options.find(o => o.username === q.answer);
 
-  // Lock buttons and style
+  // Lock hint and answer buttons
+  document.getElementById('hintBtn').disabled = true;
   document.querySelectorAll('.answer-btn').forEach(btn => {
     btn.disabled = true;
     if (btn.dataset.username === q.answer)         btn.classList.add('correct');
@@ -276,6 +307,19 @@ async function init() {
   }
 
   document.getElementById('game').style.display = 'flex';
+
+  document.getElementById('hintBtn').addEventListener('click', () => {
+    if (hintsLeft <= 0) return;
+    const wrong = Array.from(document.querySelectorAll('.answer-btn'))
+      .filter(b => b.dataset.username !== questions[current].answer && !b.classList.contains('eliminated') && !b.disabled);
+    if (!wrong.length) return;
+    wrong[Math.floor(Math.random() * wrong.length)].classList.add('eliminated');
+    hintsLeft--;
+    hintsUsedTotal++;
+    updateHintButton();
+    save();
+  });
+
   renderQuestion();
 }
 

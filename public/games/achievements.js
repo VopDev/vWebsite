@@ -34,4 +34,5 @@ const ALL_ACHIEVEMENTS = [
   { id: 'chatquiz_second_wind', game: 'xQc Chatter Quiz', icon: '🌟', title: 'Warm Up',         desc: 'Miss the first question then get 5 in a row correct' },
   { id: 'chatquiz_scholar',     game: 'xQc Chatter Quiz', icon: '📚', title: 'Scholar',         desc: 'Finish with 9 out of 10 correct' },
   { id: 'chatquiz_hot_start',   game: 'xQc Chatter Quiz', icon: '🚀', title: 'Hot Start',       desc: 'Get the first 5 questions correct in a row' },
+  { id: 'chatquiz_no_hints',    game: 'xQc Chatter Quiz', icon: '🧠', title: 'Pure Instinct',   desc: 'Complete a full quiz without using any hints' },
 ];

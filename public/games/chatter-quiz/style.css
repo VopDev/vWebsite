@@ -174,9 +174,34 @@ h1 {
 .answer-btn:active:not(:disabled) { transform: scale(0.97); }
 .answer-btn:disabled { cursor: default; }
 
-.answer-btn.correct { background: #052e16; border-color: var(--green); color: var(--green); }
-.answer-btn.wrong   { background: #1a0808; border-color: var(--red);   color: var(--red); }
-.answer-btn.dim     { opacity: 0.3; }
+.answer-btn.correct    { background: #052e16; border-color: var(--green); color: var(--green); }
+.answer-btn.wrong      { background: #1a0808; border-color: var(--red);   color: var(--red); }
+.answer-btn.dim        { opacity: 0.3; }
+.answer-btn.eliminated { opacity: 0.18; text-decoration: line-through; cursor: default; }
+
+/* ── Hint row ────────────────────────────────────────────────────────────────── */
+.hint-row { display: flex; justify-content: center; }
+
+.hint-btn {
+  background: none; border: 1px solid var(--border2);
+  border-radius: 7px; padding: 0.4rem 1rem;
+  color: var(--muted); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  cursor: pointer; transition: border-color 0.15s, color 0.15s;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.hint-btn:hover:not(:disabled) { border-color: #4a4a4a; color: var(--text); }
+.hint-btn:disabled { opacity: 0.25; cursor: default; }
+.hint-count {
+  background: var(--surface2); border-radius: 4px;
+  padding: 0.1rem 0.35rem; font-size: 0.65rem;
+}
+
+/* ── Message timestamp ───────────────────────────────────────────────────────── */
+.msg-timestamp {
+  font-size: 0.65rem; color: var(--muted); letter-spacing: 0.03em;
+  margin-left: auto; flex-shrink: 0;
+}
 
 /* ── Results ─────────────────────────────────────────────────────────────────── */
 #results {

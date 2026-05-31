@@ -35,15 +35,23 @@
     </div>
 
     <div class="message-card" id="messageCard">
-      <div class="chat-badge">
-        <svg viewBox="0 0 24 24"><path d="M11.64 5.93h1.43v4.28h-1.43m3.93-4.28H17v4.28h-1.43M7 2L3.43 5.57v12.86h4.28V22l3.58-3.57h2.85L20.57 12V2m-1.43 9.29-2.85 2.85h-2.86l-2.5 2.5v-2.5H7.71V3.43h11.43z"/></svg>
-        xQc Chat
+      <div class="chat-badge" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:0.4rem">
+          <svg viewBox="0 0 24 24"><path d="M11.64 5.93h1.43v4.28h-1.43m3.93-4.28H17v4.28h-1.43M7 2L3.43 5.57v12.86h4.28V22l3.58-3.57h2.85L20.57 12V2m-1.43 9.29-2.85 2.85h-2.86l-2.5 2.5v-2.5H7.71V3.43h11.43z"/></svg>
+          xQc Chat
+        </span>
+        <span class="msg-timestamp" id="msgTimestamp"></span>
       </div>
       <p class="message-text" id="messageText"></p>
       <div class="reveal-author"></div>
     </div>
 
     <div class="answers" id="answers"></div>
+    <div class="hint-row">
+      <button class="hint-btn" id="hintBtn">
+        💡 Hint <span class="hint-count" id="hintCount">3</span>
+      </button>
+    </div>
   </div>
 
   <div id="results">
