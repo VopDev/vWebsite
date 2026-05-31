@@ -189,6 +189,7 @@ function checkAchievements(won, guessNum, answer) {
 
 // ── Result card ───────────────────────────────────────────────────────────────
 function showResult(won, answer, guessNum) {
+  document.getElementById('loading').style.display = 'none';
   document.getElementById('game').style.display = 'none';
   const card = document.getElementById('resultCard');
   card.classList.add('show');

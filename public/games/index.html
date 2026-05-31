@@ -123,6 +123,17 @@
       align-self: flex-start;
     }
 
+    .game-card.coming-soon {
+      opacity: 0.45;
+      border-style: dashed;
+    }
+    .game-card.coming-soon:hover {
+      border-color: var(--border);
+      background: var(--surface);
+      box-shadow: none;
+    }
+    .game-card.coming-soon .game-icon { filter: grayscale(1); }
+
     .mode-toggle {
       display: flex; align-items: center; gap: 0.5rem;
       cursor: pointer; user-select: none;
@@ -192,6 +203,26 @@
           </label>
         </div>
       </div>
+      <div class="game-card coming-soon">
+        <div class="game-card-link">
+          <div class="game-icon">❓</div>
+          <h2>Coming Soon</h2>
+          <p>A new daily game is in the works. Check back soon.</p>
+        </div>
+        <div class="card-footer">
+          <span class="badge">Soon</span>
+        </div>
+      </div>
+      <div class="game-card coming-soon">
+        <div class="game-card-link">
+          <div class="game-icon">❓</div>
+          <h2>Coming Soon</h2>
+          <p>A new daily game is in the works. Check back soon.</p>
+        </div>
+        <div class="card-footer">
+          <span class="badge">Soon</span>
+        </div>
+      </div>
       <div class="game-card">
         <a href="/games/achievements/" class="game-card-link">
           <div class="game-icon">🏆</div>
@@ -205,7 +236,7 @@
     </div>
 
     <div style="text-align:center;font-size:0.68rem;letter-spacing:0.06em;color:#666;padding-top:1.25rem;border-top:1px solid #222;margin-top:0.5rem">
-      New seed in <strong id="seedTimerVal" style="color:#f0f0f0;font-variant-numeric:tabular-nums">…</strong>
+      New seed in <strong id="seedTimerVal" style="color:#f0f0f0;font-variant-numeric:tabular-nums">…</strong> · Made with ♥ by Vopori
     </div>
   </div>
 
