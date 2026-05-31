@@ -212,10 +212,6 @@
           <button class="btn btn-danger" id="resetGamesGlobalBtn">Reset Everyone's Progress</button>
         </div>
       </div>
-      <div class="danger-card">
-        <p class="danger-note">Reset <strong>today's</strong> Chatter Quiz progress for everyone (<span class="mono" id="todayLabel"></span>) so the whole audience can replay just today.</p>
-        <button class="btn btn-danger" id="resetAllChatterBtn" style="align-self:flex-start">Reset Chatter Quiz (Today)</button>
-      </div>
     </div>
 
     <div class="bulk-group">
@@ -248,7 +244,7 @@
     return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
   }
   const TODAY = todayStr();
-  document.getElementById('todayLabel').textContent = TODAY;
+
 
   function setMsg(id, text, type = '') {
     const el = document.getElementById(id);
@@ -562,15 +558,6 @@
       setMsg('bulkMsg', `Cleared ${data.deleted} game record(s).`, 'ok');
     } catch { setMsg('bulkMsg', 'Failed.', 'err'); }
   });
-  document.getElementById('resetAllChatterBtn').addEventListener('click', async () => {
-    if (!confirm(`Reset all players' Chatter Quiz progress for ${TODAY}? Everyone will be able to play again.`)) return;
-    try {
-      const res  = await fetch(`/admin/api/chatter-quiz/cache?type=states&date=${TODAY}`, { method: 'DELETE' });
-      const data = await res.json();
-      setMsg('bulkMsg', `Reset ${data.deleted} player state(s).`, 'ok');
-    } catch { setMsg('bulkMsg', 'Failed.', 'err'); }
-  });
-
   document.getElementById('resetAllAchBtn').addEventListener('click', async () => {
     if (!confirm('Reset ALL achievements for ALL players? This cannot be undone.')) return;
     try {

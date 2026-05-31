@@ -290,12 +290,15 @@ async function deleteExcept(KV, prefix, keepSid, sidLen) {
   return deleted;
 }
 
-// Wipe one player completely: game states, achievements, name, role, passkey.
+// Wipe one player completely: game states, achievements, name, role, passkey,
+// global stats and all dedup keys.
 async function wipePlayer(KV, sid) {
-  const keys = [`achievements-${sid}`, `profile-name-${sid}`, `role-${sid}`, `xp-adjust-${sid}`];
+  const keys = [`achievements-${sid}`, `profile-name-${sid}`, `role-${sid}`, `xp-adjust-${sid}`, `global-stats-${sid}`];
   const name = await KV.get(`profile-name-${sid}`);
   if (name) keys.push(`username-${name.toLowerCase()}`);
-  for (const prefix of ALL_GAME_PREFIXES) keys.push(...await listAll(KV, `${prefix}${sid}-`));
+  for (const prefix of [...ALL_GAME_PREFIXES, 'global-played-']) {
+    keys.push(...await listAll(KV, `${prefix}${sid}-`));
+  }
   const passkey = await KV.get(`passkey-${sid}`, 'json');
   keys.push(`passkey-${sid}`);
   if (passkey?.credId) keys.push(`passkey-cred-${passkey.credId}`);
@@ -354,8 +357,8 @@ export async function onRequestDelete({ request, env }) {
     const vopSid = await KV.get('username-vopori');
     let deleted = 0;
 
-    for (const p of ['achievements-', 'profile-name-', 'role-', 'xp-adjust-']) deleted += await deleteExcept(KV, p, vopSid, 0);
-    for (const p of ALL_GAME_PREFIXES)                            deleted += await deleteExcept(KV, p, vopSid, 36);
+    for (const p of ['achievements-', 'profile-name-', 'role-', 'xp-adjust-', 'global-stats-']) deleted += await deleteExcept(KV, p, vopSid, 0);
+    for (const p of [...ALL_GAME_PREFIXES, 'global-played-'])     deleted += await deleteExcept(KV, p, vopSid, 36);
 
     // Usernames: keep Vopori's reservation.
     const unames = (await listAll(KV, 'username-')).filter(k => k !== 'username-vopori');
