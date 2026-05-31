@@ -2,7 +2,8 @@ import { evaluate, getOrCreateWord } from './_words.js';
 
 const COOKIE = 'slsid';
 const TTL    = 60 * 60 * 24 * 7;
-const MAX    = 6;
+
+const MAX_GUESSES = { normal: 6, hard: 5 };
 
 function getSid(request) {
   return request.headers.get('Cookie')?.match(/slsid=([^;]+)/)?.[1] ?? null;
@@ -12,9 +13,10 @@ function cookieHeader(sid) {
   return `${COOKIE}=${sid}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax; HttpOnly`;
 }
 
-async function updateStats(date, sid, guessNum, gameOver, won, env) {
-  const statsKey = `words-stats-${date}`;
-  const seenKey  = `words-seen-${sid}-${date}`;
+async function updateStats(date, mode, sid, guessNum, gameOver, won, env) {
+  const suffix   = mode === 'hard' ? '-hard' : '';
+  const statsKey = `words-stats${suffix}-${date}`;
+  const seenKey  = `words-seen-${sid}-${date}-${mode}`;
 
   const [statsRaw, seen] = await Promise.all([
     env.SONGLESS_KV.get(statsKey, 'json'),
@@ -53,9 +55,35 @@ async function isValidWord(word) {
 
 export async function onRequestPost({ request, env }) {
   const body = await request.json().catch(() => null);
-  if (!body?.date || !body?.word) return new Response('Bad request', { status: 400 });
+  if (!body?.date) return new Response('Bad request', { status: 400 });
 
-  const { date, word } = body;
+  const { date, word, mode: rawMode, timeout } = body;
+  const mode = rawMode === 'hard' ? 'hard' : 'normal';
+  const max  = MAX_GUESSES[mode];
+
+  // ── Timeout / forfeit (hard mode timer expired) ──────────────────────────────
+  if (timeout) {
+    const answer = await getOrCreateWord(date, env, mode);
+    let sid = getSid(request);
+    const headers = { 'Content-Type': 'application/json' };
+    if (!sid) { sid = crypto.randomUUID(); headers['Set-Cookie'] = cookieHeader(sid); }
+
+    const stateKey = `words-state-${sid}-${date}-${mode}`;
+    const state    = await env.SONGLESS_KV.get(stateKey, 'json')
+      || { guesses: [], gameOver: false, won: false };
+
+    if (state.gameOver) return new Response(JSON.stringify({ gameOver: true, won: state.won, answer, mode }), { headers });
+
+    state.gameOver = true;
+    state.won      = false;
+    await Promise.all([
+      env.SONGLESS_KV.put(stateKey, JSON.stringify(state), { expirationTtl: TTL }),
+      updateStats(date, mode, sid, state.guesses.length, true, false, env),
+    ]);
+    return new Response(JSON.stringify({ gameOver: true, won: false, answer, mode, timedOut: true }), { headers });
+  }
+
+  if (!word) return new Response('Bad request', { status: 400 });
   const guess = word.toUpperCase().trim();
 
   if (guess.length !== 5) return Response.json({ error: 'Word must be 5 letters' }, { status: 400 });
@@ -63,7 +91,7 @@ export async function onRequestPost({ request, env }) {
   const valid = await isValidWord(guess);
   if (!valid) return Response.json({ error: 'Not a valid word' }, { status: 422 });
 
-  const answer = await getOrCreateWord(date, env);
+  const answer = await getOrCreateWord(date, env, mode);
 
   let sid = getSid(request);
   const headers = { 'Content-Type': 'application/json' };
@@ -72,28 +100,28 @@ export async function onRequestPost({ request, env }) {
     headers['Set-Cookie'] = cookieHeader(sid);
   }
 
-  const stateKey = `words-state-${sid}-${date}`;
+  const stateKey = `words-state-${sid}-${date}-${mode}`;
   const state    = await env.SONGLESS_KV.get(stateKey, 'json')
     || { guesses: [], gameOver: false, won: false };
 
-  if (state.gameOver) return Response.json({ error: 'Game already over' }, { status: 400 });
-  if (state.guesses.length >= MAX) return Response.json({ error: 'No guesses left' }, { status: 400 });
+  if (state.gameOver)            return Response.json({ error: 'Game already over' }, { status: 400 });
+  if (state.guesses.length >= max) return Response.json({ error: 'No guesses left' }, { status: 400 });
 
   const evaluation = evaluate(guess, answer);
   const won        = evaluation.every(e => e === 'correct');
 
   state.guesses.push({ word: guess, evaluation });
 
-  const gameOver = won || state.guesses.length >= MAX;
+  const gameOver = won || state.guesses.length >= max;
   state.gameOver = gameOver;
   state.won      = won;
 
   await Promise.all([
     env.SONGLESS_KV.put(stateKey, JSON.stringify(state), { expirationTtl: TTL }),
-    updateStats(date, sid, state.guesses.length, gameOver, won, env),
+    updateStats(date, mode, sid, state.guesses.length, gameOver, won, env),
   ]);
 
-  const response = { evaluation, gameOver, won, guessNum: state.guesses.length };
+  const response = { evaluation, gameOver, won, guessNum: state.guesses.length, mode };
   if (gameOver) response.answer = answer;
 
   return new Response(JSON.stringify(response), { headers });

@@ -4,17 +4,24 @@ function todayStr() {
   return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,'0')}-${String(n.getUTCDate()).padStart(2,'0')}`;
 }
 
-const TODAY = todayStr();
-const ROWS  = 6;
-const COLS  = 5;
+const TODAY    = todayStr();
+const COLS     = 5;
+const hardMode = localStorage.getItem('words-hard') === '1';
+const MODE     = hardMode ? 'hard' : 'normal';
+const MAX_ROWS = hardMode ? 5 : 6;
+const TOTAL_ROWS = 6; // always render 6 rows visually
 
 // ── State (client mirrors server) ─────────────────────────────────────────────
-let guesses   = [];   // [{word, evaluation}]
-let current   = '';
-let gameOver  = false;
-let gameWon   = false;
-let gameStart = 0;
+let guesses    = [];
+let current    = '';
+let gameOver   = false;
+let gameWon    = false;
+let gameStart  = 0;
 let validating = false;
+
+// Hard mode timer
+let hardTimeLeft     = 60;
+let hardTimerInterval = null;
 
 // ── Seed widget ───────────────────────────────────────────────────────────────
 function initSeedWidget(seed, sid) {
@@ -32,13 +39,21 @@ function initSeedWidget(seed, sid) {
 function buildBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-  for (let r = 0; r < ROWS; r++) {
+  for (let r = 0; r < TOTAL_ROWS; r++) {
     const row = document.createElement('div');
-    row.className = 'board-row'; row.id = `row-${r}`;
+    const isLocked = hardMode && r === 5;
+    row.className = 'board-row' + (isLocked ? ' hard-locked' : '');
+    row.id = `row-${r}`;
     for (let c = 0; c < COLS; c++) {
       const tile = document.createElement('div');
       tile.className = 'tile'; tile.id = `tile-${r}-${c}`;
       row.appendChild(tile);
+    }
+    if (isLocked) {
+      const label = document.createElement('div');
+      label.className = 'hard-locked-label';
+      label.textContent = 'Hard Mode Active';
+      row.appendChild(label);
     }
     board.appendChild(row);
   }
@@ -58,7 +73,8 @@ function renderAll() {
   if (!gameOver) {
     const r = guesses.length;
     for (let c = 0; c < COLS; c++) setTile(r, c, current[c] || '', null);
-    for (let fr = r + 1; fr < ROWS; fr++)
+    // Clear remaining input rows (never touch the locked hard-mode row)
+    for (let fr = r + 1; fr < MAX_ROWS; fr++)
       for (let c = 0; c < COLS; c++) setTile(fr, c, '', null);
   }
 }
@@ -120,11 +136,12 @@ function shakeRow(r) {
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
-async function unlockAchievement(id) {
+async function unlockAchievements(ids) {
+  if (!ids.length) return;
   try {
-    const res  = await fetch('/api/achievements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    const res  = await fetch('/api/achievements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ids) });
     const data = await res.json();
-    if (data.unlocked) showAchievementToast(id);
+    for (const id of data.unlocked || []) showAchievementToast(id);
   } catch {}
 }
 
@@ -141,22 +158,33 @@ function showAchievementToast(id) {
 
 function checkAchievements(won, guessNum, answer) {
   if (!won) return;
-  unlockAchievement('words_first');
-  if (guessNum === 1) unlockAchievement('words_genius');
-  if (guessNum === 2) unlockAchievement('words_quick');
-  if (guessNum <= 3)  unlockAchievement('words_wordsmith');
-  if (guessNum === 6) unlockAchievement('words_comeback');
-  if (gameStart && Date.now() - gameStart < 45000) unlockAchievement('words_lightning');
+  const earn = ['words_first'];
+  const elapsed = gameStart ? Date.now() - gameStart : Infinity;
+
+  if (guessNum === 1)       earn.push('words_genius');
+  if (guessNum === 2)       earn.push('words_quick');
+  if (guessNum <= 3)        earn.push('words_wordsmith');
+  if (guessNum === MAX_ROWS) earn.push(hardMode ? 'words_hard_clutch' : 'words_comeback');
+  if (elapsed < 45000)      earn.push('words_lightning');
+
+  if (hardMode) {
+    earn.push('words_hard_win');
+    if (guessNum === 1)               earn.push('words_hard_genius');
+    if (hardTimeLeft >= 30)           earn.push('words_beat_clock');
+    if (elapsed < 20000)              earn.push('words_hard_lightning');
+  }
 
   if (guesses.length > 0) {
     const first = guesses[0].evaluation;
-    if (first.filter(s => s !== 'absent').length >= 3) unlockAchievement('words_hot_start');
-    if (first[0] === 'correct') unlockAchievement('words_bull_eye');
+    if (first.filter(s => s !== 'absent').length >= 3) earn.push('words_hot_start');
+    if (first[0] === 'correct') earn.push('words_bull_eye');
     if (answer) {
       const ansSet = new Set(answer.split(''));
-      if (guesses.flatMap(g => g.word.split('')).every(l => ansSet.has(l))) unlockAchievement('words_no_miss');
+      if (guesses.flatMap(g => g.word.split('')).every(l => ansSet.has(l))) earn.push('words_no_miss');
     }
   }
+
+  unlockAchievements(earn);
 }
 
 // ── Result card ───────────────────────────────────────────────────────────────
@@ -180,8 +208,9 @@ function showResult(won, answer, guessNum) {
 
   document.getElementById('shareBtn').addEventListener('click', () => {
     const emoji  = guesses.map(g => g.evaluation.map(s => EMOJIS[s]).join('')).join('\n');
-    const score  = won ? `${guessNum}/6` : 'X/6';
-    navigator.clipboard.writeText(`Words ${TODAY} ${score}\n\n${emoji}\n\nvopori.dev/games/words/`).then(() => {
+    const score  = won ? `${guessNum}/${MAX_ROWS}` : `X/${MAX_ROWS}`;
+    const tag    = hardMode ? ' ⚡Hard' : '';
+    navigator.clipboard.writeText(`Words ${TODAY}${tag} ${score}\n\n${emoji}\n\nvopori.dev/games/words/`).then(() => {
       const btn = document.getElementById('shareBtn');
       btn.textContent = 'Copied!';
       setTimeout(() => { btn.textContent = 'Copy Result'; }, 2000);
@@ -215,7 +244,7 @@ async function submitGuess() {
   try {
     const res  = await fetch('/api/words/guess', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: TODAY, word: current }),
+      body: JSON.stringify({ date: TODAY, word: current, mode: MODE }),
     });
 
     if (res.status === 422) {
@@ -245,6 +274,8 @@ async function submitGuess() {
     gameOver = over;
     gameWon  = won;
 
+    if (over) stopHardTimer();
+
     setTimeout(() => {
       updateKeyboard();
       if (over) showResult(won, answer, guessNum);
@@ -261,6 +292,46 @@ function setKeyboardLocked(locked) {
   document.querySelectorAll('.key').forEach(btn => { btn.disabled = locked; });
 }
 
+// ── Hard mode timer ─────────────────────────────────────────────────────────
+function updateHardTimer() {
+  document.getElementById('hardTimerNum').textContent = hardTimeLeft;
+  document.getElementById('hardTimerFill').style.width = (hardTimeLeft / 60 * 100) + '%';
+}
+
+function startHardTimer() {
+  if (!hardMode) return;
+  document.getElementById('hardTimerRow').classList.add('active');
+  hardTimeLeft = 60;
+  updateHardTimer();
+  clearInterval(hardTimerInterval);
+  hardTimerInterval = setInterval(() => {
+    hardTimeLeft--;
+    updateHardTimer();
+    if (hardTimeLeft <= 0) { stopHardTimer(); timeoutGame(); }
+  }, 1000);
+}
+
+function stopHardTimer() {
+  clearInterval(hardTimerInterval);
+  hardTimerInterval = null;
+}
+
+async function timeoutGame() {
+  if (gameOver) return;
+  gameOver = true;
+  try {
+    const res  = await fetch('/api/words/guess', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: TODAY, mode: MODE, timeout: true }),
+    });
+    const data = await res.json();
+    showToast("Time's up!");
+    setTimeout(() => showResult(false, data.answer, guesses.length), 600);
+  } catch {
+    showResult(false, null, guesses.length);
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
   // Session ID for ⓘ popup
@@ -268,9 +339,15 @@ async function init() {
     document.getElementById('sidCode').textContent = sid || '—';
   }).catch(() => {});
 
+  // Hard mode UI
+  if (hardMode) {
+    document.getElementById('hardBadge').style.display = '';
+    document.getElementById('subtitle').textContent = 'Guess the 5-letter word · 5 tries · 60s';
+  }
+
   let seed;
   try {
-    const res  = await fetch(`/api/words/session?date=${TODAY}`);
+    const res  = await fetch(`/api/words/session?date=${TODAY}&mode=${MODE}`);
     const data = await res.json();
 
     seed    = data.seed;
@@ -295,6 +372,7 @@ async function init() {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('game').style.display = 'flex';
       renderAll();
+      startHardTimer();
     }
   } catch {
     document.getElementById('loading').textContent = 'Failed to load — try refreshing.';

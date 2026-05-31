@@ -185,6 +185,11 @@
         </a>
         <div class="card-footer">
           <span class="badge">Daily</span>
+          <label class="mode-toggle" id="wordsHardLabel" title="Hard Mode: 60s timer, 5 guesses">
+            <input type="checkbox" id="wordsHardToggle">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-text">Hard</span>
+          </label>
         </div>
       </div>
       <div class="game-card">
@@ -198,10 +203,10 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <div style="text-align:center;font-size:0.68rem;letter-spacing:0.06em;color:#666;padding-top:1.25rem;border-top:1px solid #222;margin-top:0.5rem">
-    New seed in <strong id="seedTimerVal" style="color:#f0f0f0;font-variant-numeric:tabular-nums">…</strong>
+    <div style="text-align:center;font-size:0.68rem;letter-spacing:0.06em;color:#666;padding-top:1.25rem;border-top:1px solid #222;margin-top:0.5rem">
+      New seed in <strong id="seedTimerVal" style="color:#f0f0f0;font-variant-numeric:tabular-nums">…</strong>
+    </div>
   </div>
 
   <script>
@@ -227,6 +232,13 @@
     });
     // Prevent toggle click from triggering card navigation
     document.getElementById('hardModeLabel').addEventListener('click', e => e.stopPropagation());
+
+    const wordsToggle = document.getElementById('wordsHardToggle');
+    wordsToggle.checked = localStorage.getItem('words-hard') === '1';
+    wordsToggle.addEventListener('change', () => {
+      localStorage.setItem('words-hard', wordsToggle.checked ? '1' : '0');
+    });
+    document.getElementById('wordsHardLabel').addEventListener('click', e => e.stopPropagation());
   </script>
 </body>
 </html>

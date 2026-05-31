@@ -12,6 +12,7 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+.claude/
 
 # Logs
 *.log

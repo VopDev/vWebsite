@@ -21,13 +21,20 @@
         </div>
       </div>
     </div>
-    <h1>Words</h1>
-    <p class="subtitle">Guess the 5-letter word · 6 tries</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+      <h1>Words</h1>
+      <span class="hard-badge" id="hardBadge" style="display:none">⚡ Hard</span>
+    </div>
+    <p class="subtitle" id="subtitle">Guess the 5-letter word · 6 tries</p>
   </header>
 
   <p class="msg" id="loading">Loading…</p>
 
   <div id="game" style="display:none;flex-direction:column;gap:1rem">
+    <div class="hard-timer-row" id="hardTimerRow">
+      <div class="hard-timer-track"><div class="hard-timer-fill" id="hardTimerFill" style="width:100%"></div></div>
+      <span class="hard-timer-num" id="hardTimerNum">60</span>
+    </div>
     <div class="board-wrap">
       <div class="board" id="board"></div>
     </div>

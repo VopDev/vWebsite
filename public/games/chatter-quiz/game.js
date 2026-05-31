@@ -9,15 +9,16 @@ function esc(s) {
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
-async function unlockAchievement(id) {
+async function unlockAchievements(ids) {
+  if (!ids.length) return;
   try {
     const res  = await fetch('/api/achievements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify(ids),
     });
     const data = await res.json();
-    if (data.unlocked) showAchievementToast(id);
+    for (const id of data.unlocked || []) showAchievementToast(id);
   } catch {}
 }
 
@@ -34,51 +35,42 @@ function showAchievementToast(id) {
 
 function checkAchievements(correct, elapsedMs) {
   totalElapsed += elapsedMs;
+  const earn = [];
 
   if (correct) {
-    unlockAchievement('chatquiz_first');
-    if (elapsedMs <= 1000)  unlockAchievement('chatquiz_instant');
-    if (elapsedMs <= 3000)  unlockAchievement('chatquiz_fast');
-    if (elapsedMs >= 30000) unlockAchievement('chatquiz_deep_thinker');
+    earn.push('chatquiz_first');
+    if (elapsedMs <= 1000)  earn.push('chatquiz_instant');
+    if (elapsedMs <= 3000)  earn.push('chatquiz_fast');
+    if (elapsedMs >= 30000) earn.push('chatquiz_deep_thinker');
 
-    // Streak of 3
     const recent = log.slice(-2);
-    if (recent.length === 2 && recent.every(a => a.correct)) unlockAchievement('chatquiz_streak');
+    if (recent.length === 2 && recent.every(a => a.correct)) earn.push('chatquiz_streak');
 
-    // Bounce Back: correct after 2 wrong in a row
     const prev2 = log.slice(-3, -1);
-    if (prev2.length === 2 && prev2.every(a => !a.correct)) unlockAchievement('chatquiz_comeback');
+    if (prev2.length === 2 && prev2.every(a => !a.correct)) earn.push('chatquiz_comeback');
   }
 
-  // 3 wrong in a row
   const last3 = log.slice(-3);
-  if (last3.length === 3 && last3.every(a => !a.correct)) unlockAchievement('chatquiz_3_wrong');
+  if (last3.length === 3 && last3.every(a => !a.correct)) earn.push('chatquiz_3_wrong');
 
-  // Hot Start: first 5 all correct
-  if (log.length >= 5 && log.slice(0, 5).every(a => a.correct)) unlockAchievement('chatquiz_hot_start');
+  if (log.length >= 5 && log.slice(0, 5).every(a => a.correct)) earn.push('chatquiz_hot_start');
 
-  // End-of-game checks
   if (log.length === questions.length) {
     const correctCount = log.filter(a => a.correct).length;
-    if (correctCount === questions.length) {
-      unlockAchievement('chatquiz_perfect');
-      unlockAchievement('chatquiz_no_miss');
-    }
-    if (correctCount === 0) unlockAchievement('chatquiz_clueless');
-    if (correctCount === questions.length - 1) unlockAchievement('chatquiz_scholar');
-    if (totalElapsed <= 30000)  unlockAchievement('chatquiz_speed_run');
-    if (hintsUsedTotal === 0)   unlockAchievement('chatquiz_no_hints');
-
-    // Clutch: missed Q1, got last question right
-    if (!log[0].correct && log[log.length - 1].correct) unlockAchievement('chatquiz_clutch');
-
-    // Warm Up: missed Q1, then got 5 in a row correct
+    if (correctCount === questions.length) { earn.push('chatquiz_perfect'); earn.push('chatquiz_no_miss'); }
+    if (correctCount === 0) earn.push('chatquiz_clueless');
+    if (correctCount === questions.length - 1) earn.push('chatquiz_scholar');
+    if (totalElapsed <= 30000) earn.push('chatquiz_speed_run');
+    if (hintsUsedTotal === 0)  earn.push('chatquiz_no_hints');
+    if (!log[0].correct && log[log.length - 1].correct) earn.push('chatquiz_clutch');
     if (!log[0].correct) {
       for (let i = 1; i <= log.length - 5; i++) {
-        if (log.slice(i, i + 5).every(a => a.correct)) { unlockAchievement('chatquiz_second_wind'); break; }
+        if (log.slice(i, i + 5).every(a => a.correct)) { earn.push('chatquiz_second_wind'); break; }
       }
     }
   }
+
+  unlockAchievements(earn);
 }
 
 function renderMessage(text) {

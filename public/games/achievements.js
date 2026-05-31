@@ -45,5 +45,10 @@
   { id: 'words_lightning', game: 'Words', icon: '⏱️', title: 'Lightning',    desc: 'Guess the word in under 45 seconds' },
   { id: 'words_hot_start', game: 'Words', icon: '🔥', title: 'Hot Start',    desc: 'Get 3+ matching letters on your first guess' },
   { id: 'words_bull_eye',  game: 'Words', icon: '🎯', title: "Bull's Eye",   desc: 'Get the first letter correct on your opening guess' },
-  { id: 'words_no_miss',   game: 'Words', icon: '✨', title: 'Surgical',     desc: 'Win using only letters that appear in the answer' },
+  { id: 'words_no_miss',        game: 'Words', icon: '✨', title: 'Surgical',       desc: 'Win using only letters that appear in the answer' },
+  { id: 'words_hard_win',       game: 'Words', icon: '🔥', title: 'Hard Mode',      desc: 'Win a Words game in Hard Mode' },
+  { id: 'words_hard_genius',    game: 'Words', icon: '🧠', title: 'Hard Genius',    desc: 'Guess the word on the first try in Hard Mode' },
+  { id: 'words_hard_clutch',    game: 'Words', icon: '🎲', title: 'Clutch 5',       desc: 'Win on the 5th and final guess in Hard Mode' },
+  { id: 'words_beat_clock',     game: 'Words', icon: '⏱️', title: 'Clockwork',      desc: 'Win in Hard Mode with 30 or more seconds left' },
+  { id: 'words_hard_lightning', game: 'Words', icon: '⚡', title: 'Hard Lightning', desc: 'Win in Hard Mode in under 20 seconds' },
 ];

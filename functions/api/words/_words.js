@@ -56,20 +56,23 @@ async function fetchRandomWord() {
   }
 }
 
-export async function getOrCreateWord(date, env) {
-  const wordKey = `words-word-${date}`;
+export async function getOrCreateWord(date, env, mode = 'normal') {
+  const suffix  = mode === 'hard' ? '-hard' : '';
+  const wordKey = `words-word${suffix}-${date}`;
+  const seedKey = `words-seed${suffix}-${date}`;
+
   const existing = await env.SONGLESS_KV.get(wordKey);
   if (existing) return existing;
 
   const [word, existingSeed] = await Promise.all([
     fetchRandomWord(),
-    env.SONGLESS_KV.get(`words-seed-${date}`),
+    env.SONGLESS_KV.get(seedKey),
   ]);
 
   const seed = existingSeed || generateSeed();
   await Promise.all([
     env.SONGLESS_KV.put(wordKey, word, { expirationTtl: 60 * 60 * 24 * 8 }),
-    existingSeed ? Promise.resolve() : env.SONGLESS_KV.put(`words-seed-${date}`, seed, { expirationTtl: 60 * 60 * 24 * 8 }),
+    existingSeed ? Promise.resolve() : env.SONGLESS_KV.put(seedKey, seed, { expirationTtl: 60 * 60 * 24 * 8 }),
   ]);
 
   return word;

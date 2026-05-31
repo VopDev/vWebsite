@@ -356,15 +356,16 @@ function timeoutSong() {
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
-async function unlockAchievement(id) {
+async function unlockAchievements(ids) {
+  if (!ids.length) return;
   try {
     const res  = await fetch('/api/achievements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify(ids),
     });
     const data = await res.json();
-    if (data.unlocked) showAchievementToast(id);
+    for (const id of data.unlocked || []) showAchievementToast(id);
   } catch {}
 }
 
@@ -388,50 +389,47 @@ function showAchievementToast(id) {
 }
 
 function checkAchievements(game, slot) {
-  // Completionist: all 5 attempted (win or lose)
-  if (state.games.every(g => g.over)) unlockAchievement('songless_full_day');
+  const earn = [];
 
-  if (!game.won) return;
+  if (state.games.every(g => g.over)) earn.push('songless_full_day');
 
-  unlockAchievement('songless_first');
-  if (game.guesses.length === 1)          unlockAchievement('songless_perfect');
-  if (game.guesses.length <= 2)           unlockAchievement('songless_quick');
-  if (game.guesses.length === MAX_GUESSES)unlockAchievement('songless_clutch');
-  if (!game.guesses.some(g => g.skipped)) unlockAchievement('songless_no_skip');
-  if (hardMode)                           unlockAchievement('songless_hard_win');
-  if (hardMode && game.guesses.length === 1)  unlockAchievement('songless_hard_first');
-  if (hardMode && hardTimeLeft >= 15)         unlockAchievement('songless_beat_clock');
-  if (hardMode && hardTimeLeft <= 5)          unlockAchievement('songless_hard_clutch');
-  if (slot === 0)                             unlockAchievement('songless_early_bird');
+  if (game.won) {
+    earn.push('songless_first');
+    if (game.guesses.length === 1)           earn.push('songless_perfect');
+    if (game.guesses.length <= 2)            earn.push('songless_quick');
+    if (game.guesses.length === MAX_GUESSES) earn.push('songless_clutch');
+    if (!game.guesses.some(g => g.skipped))  earn.push('songless_no_skip');
+    if (hardMode)                            earn.push('songless_hard_win');
+    if (hardMode && game.guesses.length === 1) earn.push('songless_hard_first');
+    if (hardMode && hardTimeLeft >= 15)        earn.push('songless_beat_clock');
+    if (hardMode && hardTimeLeft <= 5)         earn.push('songless_hard_clutch');
+    if (slot === 0)                            earn.push('songless_early_bird');
 
-  // Won after 4+ wrong guesses
-  const wrongCount = game.guesses.filter(g => !g.correct && !g.skipped).length;
-  if (wrongCount >= 4) unlockAchievement('songless_comeback');
+    const wrongCount = game.guesses.filter(g => !g.correct && !g.skipped).length;
+    if (wrongCount >= 4) earn.push('songless_comeback');
 
-  const wonGames = state.games.filter(g => g.over && g.won);
-  if (wonGames.every(g => g.won) && wonGames.length >= 1) {
-    // Hat Trick: 3 in a row
-    let streak = 0;
-    for (const g of state.games) {
-      if (g.over && g.won) streak++; else if (g.over) streak = 0;
+    const wonGames = state.games.filter(g => g.over && g.won);
+    if (wonGames.length >= 1) {
+      let streak = 0;
+      for (const g of state.games) { if (g.over && g.won) streak++; else if (g.over) streak = 0; }
+      if (streak >= 3) earn.push('songless_3_streak');
     }
-    if (streak >= 3) unlockAchievement('songless_3_streak');
+
+    const perfectCount = state.games.filter(g => g.over && g.won && g.guesses.length === 1).length;
+    if (perfectCount >= 2) earn.push('songless_2x_perfect');
+
+    if (state.games.every(g => g.over && g.won)) {
+      earn.push('songless_sweep');
+      if (hardMode) earn.push('songless_hard_sweep');
+    }
+
+    const allOver = state.games.filter(g => g.over);
+    if (allOver.length === DAILY_COUNT && allOver.every(g => !g.guesses.some(gs => gs.skipped))) {
+      earn.push('songless_no_skip_day');
+    }
   }
 
-  // 2x Perfect: 2 songs guessed on clip 1
-  const perfectCount = state.games.filter(g => g.over && g.won && g.guesses.length === 1).length;
-  if (perfectCount >= 2) unlockAchievement('songless_2x_perfect');
-
-  if (state.games.every(g => g.over && g.won)) {
-    unlockAchievement('songless_sweep');
-    if (hardMode) unlockAchievement('songless_hard_sweep');
-  }
-
-  // No skips across all completed songs
-  const allOver = state.games.filter(g => g.over);
-  if (allOver.length === DAILY_COUNT && allOver.every(g => !g.guesses.some(gs => gs.skipped))) {
-    unlockAchievement('songless_no_skip_day');
-  }
+  unlockAchievements(earn);
 }
 
 // ── Result preview ────────────────────────────────────────────────────────────

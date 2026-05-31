@@ -62,6 +62,17 @@
     .sid-select option { background: var(--surface2); }
     .player-info { display: none; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
     .player-info-text { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.6rem; line-height: 1.6; }
+
+    /* Mode tabs */
+    .mode-tabs { display: flex; gap: 0.5rem; }
+    .mode-tab {
+      padding: 0.4rem 1rem; border-radius: 7px; font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer;
+      background: var(--surface2); color: var(--muted); border: 1px solid var(--border2);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .mode-tab.active { color: var(--text); border-color: #4a4a4a; }
+    .mode-tab.hard.active { color: #ef4444; border-color: #3d1a1a; background: #1a0808; }
   </style>
 </head>
 <body>
@@ -70,6 +81,11 @@
     <a href="/admin/" class="back">← Admin</a>
     <h1>Words Admin — <span id="dateLabel"></span></h1>
   </header>
+
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="normal">Normal</div>
+    <div class="mode-tab hard" data-mode="hard">⚡ Hard</div>
+  </div>
 
   <!-- Today's word -->
   <section>
@@ -130,6 +146,17 @@
   const TODAY = todayStr();
   document.getElementById('dateLabel').textContent = TODAY;
 
+  let selectedMode = 'normal';
+
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      selectedMode = tab.dataset.mode;
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t === tab));
+      loadWordAndStats();
+      document.getElementById('playerInfo').style.display = 'none';
+    });
+  });
+
   function setWordMsg(text, type = '') {
     const el = document.getElementById('wordMsg');
     el.textContent = text; el.className = `msg ${type}`;
@@ -138,7 +165,7 @@
 
   async function loadWordAndStats() {
     try {
-      const data = await fetch(`/admin/api/words/config?date=${TODAY}`).then(r => r.json());
+      const data = await fetch(`/admin/api/words/config?date=${TODAY}&mode=${selectedMode}`).then(r => r.json());
       document.getElementById('todayWord').textContent = data.word || '—';
       document.getElementById('todaySeed').textContent = data.seed
         ? `Seed: ${data.seed.match(/.{4}/g).join(' ')}`
@@ -155,7 +182,7 @@
 
       const dist = s.distribution || {};
       const maxVal = Math.max(1, ...Object.values(dist));
-      const keys   = ['1','2','3','4','5','6','X'];
+      const keys   = selectedMode === 'hard' ? ['1','2','3','4','5','X'] : ['1','2','3','4','5','6','X'];
       document.getElementById('distList').innerHTML = keys.map(k => {
         const count = dist[k] || 0;
         const w     = Math.round(count / maxVal * 100);
@@ -172,7 +199,7 @@
   document.getElementById('resetSeedBtn').addEventListener('click', async () => {
     if (!confirm('Generate a new seed and word for today? Active players will see a different word.')) return;
     try {
-      const data = await fetch(`/admin/api/words/config?date=${TODAY}`, { method: 'DELETE' }).then(r => r.json());
+      const data = await fetch(`/admin/api/words/config?date=${TODAY}&mode=${selectedMode}`, { method: 'DELETE' }).then(r => r.json());
       document.getElementById('todayWord').textContent = data.word || '—';
       document.getElementById('todaySeed').textContent = data.seed ? `Seed: ${data.seed.match(/.{4}/g).join(' ')}` : '';
       setWordMsg('New seed and word generated.', 'ok');
@@ -211,7 +238,7 @@
     if (!sid) { setLookupMsg('Enter a session ID.', 'err'); return; }
     currentSid = sid;
     try {
-      const data = await fetch(`/admin/api/words/player?sid=${encodeURIComponent(sid)}&date=${TODAY}`).then(r => r.json());
+      const data = await fetch(`/admin/api/words/player?sid=${encodeURIComponent(sid)}&date=${TODAY}&mode=${selectedMode}`).then(r => r.json());
       const state = data.state;
       const achs  = data.achievements || [];
       const info  = document.getElementById('playerInfoText');
@@ -229,7 +256,7 @@
   document.getElementById('resetStateBtn').addEventListener('click', async () => {
     if (!currentSid || !confirm('Reset this player\'s Words state for today?')) return;
     try {
-      await fetch(`/admin/api/words/player?sid=${encodeURIComponent(currentSid)}&date=${TODAY}`, { method: 'DELETE' });
+      await fetch(`/admin/api/words/player?sid=${encodeURIComponent(currentSid)}&date=${TODAY}&mode=${selectedMode}`, { method: 'DELETE' });
       setLookupMsg('Game state reset.', 'ok');
       document.getElementById('playerInfo').style.display = 'none';
     } catch { setLookupMsg('Failed.', 'err'); }
