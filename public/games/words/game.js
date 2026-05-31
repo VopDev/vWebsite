@@ -157,34 +157,40 @@ function showAchievementToast(id) {
 }
 
 function checkAchievements(won, guessNum, answer) {
-  if (!won) return;
-  const earn = ['words_first'];
-  const elapsed = gameStart ? Date.now() - gameStart : Infinity;
+  const earn = [];
 
-  if (guessNum === 1)       earn.push('words_genius');
-  if (guessNum === 2)       earn.push('words_quick');
-  if (guessNum <= 3)        earn.push('words_wordsmith');
-  if (guessNum === MAX_ROWS) earn.push(hardMode ? 'words_hard_clutch' : 'words_comeback');
-  if (elapsed < 45000)      earn.push('words_lightning');
+  if (won) {
+    earn.push('words_first');
+    const elapsed = gameStart ? Date.now() - gameStart : Infinity;
 
-  if (hardMode) {
-    earn.push('words_hard_win');
-    if (guessNum === 1)               earn.push('words_hard_genius');
-    if (hardTimeLeft >= 30)           earn.push('words_beat_clock');
-    if (elapsed < 20000)              earn.push('words_hard_lightning');
-  }
+    if (guessNum === 1)        earn.push('words_genius');
+    if (guessNum === 2)        earn.push('words_quick');
+    if (guessNum <= 3)         earn.push('words_wordsmith');
+    if (guessNum === MAX_ROWS) earn.push(hardMode ? 'words_hard_clutch' : 'words_comeback');
+    if (elapsed < 45000)       earn.push('words_lightning');
 
-  if (guesses.length > 0) {
-    const first = guesses[0].evaluation;
-    if (first.filter(s => s !== 'absent').length >= 3) earn.push('words_hot_start');
-    if (first[0] === 'correct') earn.push('words_bull_eye');
-    if (answer) {
-      const ansSet = new Set(answer.split(''));
-      if (guesses.flatMap(g => g.word.split('')).every(l => ansSet.has(l))) earn.push('words_no_miss');
+    if (hardMode) {
+      earn.push('words_hard_win');
+      if (guessNum === 1)     earn.push('words_hard_genius');
+      if (hardTimeLeft >= 30) earn.push('words_beat_clock');
+      if (elapsed < 20000)    earn.push('words_hard_lightning');
+    }
+
+    if (guesses.length > 0) {
+      const first = guesses[0].evaluation;
+      if (first.filter(s => s !== 'absent').length >= 3) earn.push('words_hot_start');
+      if (first[0] === 'correct') earn.push('words_bull_eye');
+      if (answer) {
+        const ansSet = new Set(answer.split(''));
+        if (guesses.flatMap(g => g.word.split('')).every(l => ansSet.has(l))) earn.push('words_no_miss');
+      }
     }
   }
 
-  unlockAchievements(earn);
+  // Completing the game (win or lose) counts toward global play/streak achievements
+  recordGlobalCompletion('words', TODAY, MODE).then(globalIds => {
+    unlockAchievements([...earn, ...globalIds]);
+  });
 }
 
 // ── Result card ───────────────────────────────────────────────────────────────

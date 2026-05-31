@@ -1,4 +1,14 @@
 ﻿const ALL_ACHIEVEMENTS = [
+  // ── Global (any game) ──────────────────────────────────────────────────────
+  { id: 'global_play_1',    game: 'Global', icon: '🎮', title: 'Getting Started', desc: 'Complete any game for the first time' },
+  { id: 'global_play_5',    game: 'Global', icon: '🎯', title: 'Regular',         desc: 'Complete 5 games total' },
+  { id: 'global_play_10',   game: 'Global', icon: '🕹️', title: 'Dedicated',       desc: 'Complete 10 games total' },
+  { id: 'global_play_50',   game: 'Global', icon: '👾', title: 'Veteran',         desc: 'Complete 50 games total' },
+  { id: 'global_streak_1',  game: 'Global', icon: '📅', title: 'Day One',         desc: 'Play on a single day' },
+  { id: 'global_streak_5',  game: 'Global', icon: '🔥', title: 'On a Streak',     desc: 'Play 5 days in a row' },
+  { id: 'global_streak_10', game: 'Global', icon: '⚡', title: 'Unstoppable',     desc: 'Play 10 days in a row' },
+  { id: 'global_streak_50', game: 'Global', icon: '💎', title: 'Devoted',         desc: 'Play 50 days in a row' },
+
   // ── SongQuiz ──────────────────────────────────────────────────────────────
   { id: 'songless_first',      game: 'SongQuiz', icon: '🎵', title: 'First Note',      desc: 'Win your first SongQuiz song' },
   { id: 'songless_sweep',      game: 'SongQuiz', icon: '🏆', title: 'Sweep',            desc: 'Win all 5 songs in a single day' },
@@ -52,3 +62,18 @@
   { id: 'words_beat_clock',     game: 'Words', icon: '⏱️', title: 'Clockwork',      desc: 'Win in Hard Mode with 30 or more seconds left' },
   { id: 'words_hard_lightning', game: 'Words', icon: '⚡', title: 'Hard Lightning', desc: 'Win in Hard Mode in under 20 seconds' },
 ];
+
+// Records a completed game globally (total plays + day streak) and returns the
+// list of global achievement IDs the player now qualifies for. Deduped server-side
+// per game+date+mode, so calling it again for the same finished game is a no-op.
+async function recordGlobalCompletion(game, date, mode = 'normal') {
+  try {
+    const res  = await fetch('/api/global-stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ game, date, mode }),
+    });
+    const data = await res.json();
+    return data.qualified || [];
+  } catch { return []; }
+}

@@ -19,6 +19,7 @@ const CHATTERS = [
   'drkness_x', 'esattt', 'its_physikz', 'jdxl', 'juniorrr',
   'leeqox', 'missdeee', 'prestonalewis', 'thepositivebot', 'tjt811',
   'trestos3', 'wapze', 'wirezs', 'zoil',
+  'cristianoooronaldooo', 'epicxd_', 'forgettrance',
 ].map(u => ({ username: u, display: u }));
 
 const BOTS = new Set([

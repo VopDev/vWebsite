@@ -429,7 +429,12 @@ function checkAchievements(game, slot) {
     }
   }
 
-  unlockAchievements(earn);
+  // Finishing all songs for the day counts toward global play/streak achievements
+  if (state.games.every(g => g.over)) {
+    recordGlobalCompletion('songquiz', TODAY, MODE).then(globalIds => unlockAchievements([...earn, ...globalIds]));
+  } else {
+    unlockAchievements(earn);
+  }
 }
 
 // ── Result preview ────────────────────────────────────────────────────────────

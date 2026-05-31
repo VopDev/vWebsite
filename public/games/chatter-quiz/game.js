@@ -55,7 +55,8 @@ function checkAchievements(correct, elapsedMs) {
 
   if (log.length >= 5 && log.slice(0, 5).every(a => a.correct)) earn.push('chatquiz_hot_start');
 
-  if (log.length === questions.length) {
+  const isComplete = log.length === questions.length;
+  if (isComplete) {
     const correctCount = log.filter(a => a.correct).length;
     if (correctCount === questions.length) { earn.push('chatquiz_perfect'); earn.push('chatquiz_no_miss'); }
     if (correctCount === 0) earn.push('chatquiz_clueless');
@@ -70,7 +71,12 @@ function checkAchievements(correct, elapsedMs) {
     }
   }
 
-  unlockAchievements(earn);
+  if (isComplete) {
+    // Finishing the quiz counts toward global play/streak achievements
+    recordGlobalCompletion('chatter-quiz', TODAY).then(globalIds => unlockAchievements([...earn, ...globalIds]));
+  } else {
+    unlockAchievements(earn);
+  }
 }
 
 function renderMessage(text) {
